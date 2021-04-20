@@ -317,8 +317,8 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import")) settings (
   name := "sql-delta-import",
   commonSettings,
   libraryDependencies ++= Seq(
-    "org.apache.spark" % "spark-sql_2.12" % "3.0.1" % "provided",
-    "io.delta" % "delta-core_2.12" % "0.7.0" % "provided",
+    "org.apache.spark" %% "spark-sql" % "3.0.1" % "provided",
+    "io.delta" %% "delta-core" % "0.8.0" % "provided",
     "org.rogach" %% "scallop" % "3.5.1"
   )
 )

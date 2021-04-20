@@ -1,5 +1,6 @@
 # sql-delta-import
- Import data from a relational database or any other JDBC source into your Delta Lake. 
+
+ Imports data from a relational database or any other JDBC source into your Delta Lake. 
  Import either entire table or only a subset of columns, control level of parallelism, 
  include any custom transformations
  
@@ -54,7 +55,7 @@ import io.delta.connectors.spark.JDBC._
   
   implicit val spark: SparkSession = SparkSession
     .builder()
-    .master("local")
+    .master("local[*]")
     .getOrCreate()
 
  // All additional possible jdbc connector properties described here -

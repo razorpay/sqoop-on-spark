@@ -1,6 +1,5 @@
-// scalastyle:off
 /*
- * Copyright (2021) Scribd Inc.
+ * Copyright (2020) The Delta Lake Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// scalastyle:on
 
 package io.delta.connectors.spark.JDBC
 
@@ -62,14 +60,13 @@ class JDBCImport(jdbcUrl: String,
   }
 
   // list of columns to import is obtained from schema of destination delta table
-  private val targetColumns = DeltaTable
+  private lazy val targetColumns = DeltaTable
     .forName(importConfig.destination)
     .toDF
     .schema
-    .fields
-    .map(_.name)
+    .fieldNames
 
-  private val sourceDataframe = readJDBCSourceInParallel()
+  private lazy val sourceDataframe = readJDBCSourceInParallel()
     .select(targetColumns.map(col): _*)
 
   /**
@@ -82,8 +79,8 @@ class JDBCImport(jdbcUrl: String,
       .read
       .jdbc(jdbcUrl, importConfig.bounds_sql, jdbcParams)
       .as[(Option[Long], Option[Long])]
-      .collect()
-      .map{ case (a, b) => (a.getOrElse(0L), b.getOrElse(0L))}
+      .take(1)
+      .map{ case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
       .head
 
     val (source, splitBy, chunks) = (importConfig.source, importConfig.splitBy, importConfig.chunks)

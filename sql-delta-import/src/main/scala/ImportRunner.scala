@@ -1,6 +1,5 @@
-// scalastyle:off
 /*
- * Copyright (2021) Scribd Inc.
+ * Copyright (2020) The Delta Lake Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// scalastyle:on
 
 package io.delta.connectors.spark.JDBC
 
@@ -53,7 +51,7 @@ object ImportRunner {
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
   val className = "io.delta.connectors.spark.JDBC.ImportRunner"
-  val jarName = "sql-delta-import_2.12-0.2.1-SNAPSHOT.jar"
+  val jarName = "sql-delta-import_2.12-0.2.1.jar"
 
   banner("\nOptions:\n")
   footer(
