@@ -1,5 +1,5 @@
 /*
- * Copyright (2020) The Delta Lake Project Authors.
+ * Copyright (2021) The Delta Lake Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.delta.connectors.spark.JDBC
+package io.delta.connectors.spark.jdbc
 
 import org.apache.spark.sql.SparkSession
 import org.rogach.scallop.{ScallopConf, ScallopOption}
@@ -22,9 +22,9 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 /**
  * Spark app that wraps functionality of JDBCImport and exposes configuration as command line args
  */
-object ImportRunner {
+object ImportRunner extends App {
 
-  def main(args: Array[String]): Unit = {
+  override def main(args: Array[String]): Unit = {
     val config = new ImportRunnerConfig(args)
 
     implicit val spark = SparkSession
@@ -40,18 +40,17 @@ object ImportRunner {
 
     val transforms = new DataTransforms(Seq.empty)
 
-    val importer = JDBCImport(
+   JDBCImport(
       jdbcUrl = config.jdbcUrl(),
       importConfig = importConfig,
-      dataTransforms = transforms)
-
-    importer.run()
+      dataTransforms = transforms
+   ).run
   }
 }
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
-  val className = "io.delta.connectors.spark.JDBC.ImportRunner"
-  val jarName = "sql-delta-import_2.12-0.2.1.jar"
+  val className = "io.delta.connectors.spark.jdbc.ImportRunner"
+  val jarName = "sql-delta-import.jar"
 
   banner("\nOptions:\n")
   footer(

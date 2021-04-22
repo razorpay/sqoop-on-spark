@@ -1,5 +1,5 @@
 /*
- * Copyright (2020) The Delta Lake Project Authors.
+ * Copyright (2021) The Delta Lake Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.delta.connectors.spark.JDBC
+package io.delta.connectors.spark.jdbc
 
 import java.util.Properties
 
@@ -75,17 +75,22 @@ class JDBCImport(jdbcUrl: String,
    */
   private def readJDBCSourceInParallel(): DataFrame = {
 
-    val (lower, upper): (Long, Long) = spark
+    val (lower, upper) = spark
       .read
       .jdbc(jdbcUrl, importConfig.bounds_sql, jdbcParams)
       .as[(Option[Long], Option[Long])]
       .take(1)
-      .map{ case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
+      .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
       .head
 
-    val (source, splitBy, chunks) = (importConfig.source, importConfig.splitBy, importConfig.chunks)
-
-    spark.read.jdbc(jdbcUrl, source, splitBy, lower, upper, chunks, jdbcParams)
+    spark.read.jdbc(
+      jdbcUrl,
+      importConfig.source,
+      importConfig.splitBy,
+      lower,
+      upper,
+      importConfig.chunks,
+      jdbcParams)
   }
 
   private implicit class DataFrameExtensionOps(df: DataFrame) {

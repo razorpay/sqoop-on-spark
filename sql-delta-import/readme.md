@@ -7,7 +7,8 @@
 Destination delta table has to exist before import. It's schema will be used to infer 
 desired columns and their data types
 
-## Basic Usage 
+## Basic Usage
+
 You can use included runner to import data without custom transformations by submitting
 a spark job
 
@@ -16,7 +17,7 @@ destination delta table
 
 ```shell script
 spark-submit /
---class "io.delta.connectors.spark.JDBC.ImportRunner" sql-delta-import_2.12-0.2.1-SNAPSHOT.jar /
+--class "io.delta.connectors.spark.jdbc.ImportRunner" sql-delta-import.jar /
 --jdbc-url jdbc:mysql://hostName:port/database /
 --source source.table
 --destination destination.table
@@ -26,11 +27,12 @@ A good `split-by` column will be indexed and ideally will have close to uniform 
 of data between it's `min` and `max` values
 
 ## Control degree of import parallelism using `chunks` parameter and spark executor configuration
+
 ```shell script
 spark-submit --num-executors 15 --executor-cores 4 /
 --conf spark.databricks.delta.optimizeWrite.enabled=true /
 --conf spark.databricks.delta.autoCompact.enabled=true /
---class "io.delta.connectors.spark.JDBC.ImportRunner" sql-delta-import_2.12-0.2.1-SNAPSHOT.jar /
+--class "io.delta.connectors.spark.jdbc.ImportRunner" sql-delta-import.jar /
 --jdbc-url jdbc:mysql://hostName:port/database /
 --source source.table
 --destination destination.table
@@ -51,7 +53,7 @@ optimized - avoid small files and skewed file sizes.
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import io.delta.connectors.spark.JDBC._
+import io.delta.connectors.spark.jdbc._
   
   implicit val spark: SparkSession = SparkSession
     .builder()

@@ -165,6 +165,7 @@ If the schema in the underlying Delta metadata is not consistent with the schema
 The connector supports MapReduce and Tez. It doesn't support Spark execution engine in Hive.
 
 ## sql-delta-import
+
 [sql-delta-import](/sql-delta-import/readme.md) allows for importing data from a JDBC source into a Delta Lake table
 
 

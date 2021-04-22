@@ -1,5 +1,5 @@
 /*
- * Copyright (2020) The Delta Lake Project Authors.
+ * Copyright (2021) The Delta Lake Project Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package io.delta.connectors.spark.JDBC
+package io.delta.connectors.spark.jdbc
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
- * Class that accepts Seq of DataFrame => DataFrame functions and applies them
- * one by one on input DataFrame
+ * Class that applies transformation functions one by one on input DataFrame
  */
-class DataTransforms(f: Seq[DataFrame => DataFrame])(implicit spark: SparkSession) {
+ class DataTransforms(transformations: Seq[DataFrame => DataFrame]) {
 
   /**
    * Executes functions against DataFrame
@@ -30,5 +29,5 @@ class DataTransforms(f: Seq[DataFrame => DataFrame])(implicit spark: SparkSessio
    * @param df - input DataFrame against which functions need to be executed
    * @return - modified by Seq of functions DataFrame
    */
-  def runTransform(df: DataFrame): DataFrame = f.foldLeft(df)((v, f) => f(v))
+  def runTransform(df: DataFrame): DataFrame = transformations.foldLeft(df)((v, f) => f(v))
 }
