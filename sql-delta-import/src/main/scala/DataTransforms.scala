@@ -21,7 +21,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 /**
  * Class that applies transformation functions one by one on input DataFrame
  */
- class DataTransforms(transformations: Seq[DataFrame => DataFrame]) {
+class DataTransforms(transformations: Seq[DataFrame => DataFrame]) {
 
   /**
    * Executes functions against DataFrame
