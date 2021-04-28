@@ -118,7 +118,7 @@ object JDBCImport {
   def apply(jdbcUrl: String,
             importConfig: ImportConfig,
             jdbcParams: Map[String, String] = Map(),
-            dataTransforms: DataTransforms)
+            dataTransforms: DataTransforms = new DataTransforms(Seq.empty))
            (implicit spark: SparkSession): JDBCImport = {
 
     new JDBCImport(jdbcUrl, importConfig, jdbcParams, dataTransforms)
