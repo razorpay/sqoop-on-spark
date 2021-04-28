@@ -133,4 +133,5 @@ class ImportTest extends AnyFunSuite with BeforeAndAfterAll {
     assert(imported.map(a => a.getAs[String]("ts")).toSeq ==
       Seq("21-02-01 01:02", "21-04-03 03:04", "21-06-05 05:06", "21-08-07 07:08"))
   }
+
 }
