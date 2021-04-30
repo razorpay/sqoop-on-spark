@@ -317,7 +317,8 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
   .settings (
     name := "sql-delta-import",
     commonSettings,
-    releaseCrossBuild := false,
+    publishArtifact := scalaBinaryVersion.value == "2.12",
+    publishArtifact in Test := false,
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
       "io.delta" % "delta-core_2.12" % "0.7.0" % "provided",
@@ -327,5 +328,6 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
       "org.apache.spark" % "spark-catalyst_2.12" % "3.0.0" % "test",
       "org.apache.spark" % "spark-core_2.12" % "3.0.0" % "test",
       "org.apache.spark" % "spark-sql_2.12" % "3.0.0" % "test"
+    )
   )
-)
+  .settings(releaseSettings)
