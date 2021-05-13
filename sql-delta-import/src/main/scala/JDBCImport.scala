@@ -33,7 +33,9 @@ import scala.collection.JavaConverters._
  *  @param chunks       - to how many chunks split jdbc source data
  */
 case class ImportConfig(source: String, destination: String, splitBy: String, chunks: Int) {
-  val bounds_sql = s"(select min($splitBy), max($splitBy) from $source) as bounds"
+  val bounds_sql = s"""
+  (select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $source) as bounds
+  """
 }
 
 /**
