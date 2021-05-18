@@ -17,8 +17,6 @@
 package io.delta.connectors.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
-import io.delta.tables.DeltaTable
-import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import java.util.Properties
@@ -31,8 +29,15 @@ import java.util.Properties
  * @param splitBy     - column by which to split source data while reading
  * @param chunks      - to how many chunks split jdbc source data
  */
-case class ImportConfig(source: String, destination: String, splitBy: String, chunks: Int,
-                        partitionBy: String, database: String) {
+case class ImportConfig(
+    source: String,
+    destination: String,
+    splitBy: String,
+    chunks: Int,
+    partitionBy: String,
+    database: String
+) {
+
   val bounds_sql =
     s"""
   (select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $source) as bounds
@@ -48,11 +53,12 @@ case class ImportConfig(source: String, destination: String, splitBy: String, ch
  *                      net wait params etc...
  * @param dataTransform - contains function that we should apply to transform our source data
  */
-class JDBCImport(databricksScope: String,
-                 importConfig: ImportConfig,
-                 jdbcParams: Map[String, String] = Map(),
-                 dataTransform: DataTransforms)
-                (implicit val spark: SparkSession) {
+class JDBCImport(
+    databricksScope: String,
+    importConfig: ImportConfig,
+    jdbcParams: Map[String, String] = Map(),
+    dataTransform: DataTransforms
+)(implicit val spark: SparkSession) {
 
   import spark.implicits._
 
@@ -73,7 +79,7 @@ class JDBCImport(databricksScope: String,
 
     val database = importConfig.database
 
-    val connectionUrl = s"jdbc:$dbType//$host:$port/$database"
+    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
 
     connectionUrl
   }
@@ -87,8 +93,7 @@ class JDBCImport(databricksScope: String,
    */
   private def readJDBCSourceInParallel(): DataFrame = {
 
-    val (lower, upper) = spark
-      .read
+    val (lower, upper) = spark.read
       .jdbc(buildJdbcUrl, importConfig.bounds_sql, jdbcParams)
       .as[(Option[Long], Option[Long])]
       .take(1)
@@ -102,23 +107,26 @@ class JDBCImport(databricksScope: String,
       lower,
       upper,
       importConfig.chunks,
-      jdbcParams)
+      jdbcParams
+    )
   }
 
   private implicit class DataFrameExtensionOps(df: DataFrame) {
 
     def runTransform(): DataFrame = dataTransform.runTransform(sourceDataframe)
 
-    def writeToDelta(deltaTableToWrite: String): Unit = df
-      .write
-      .format("delta")
-      .mode(SaveMode.Overwrite)
-      .insertInto(deltaTableToWrite)
+    def writeToDelta(deltaTableToWrite: String): Unit = {
+      df.write
+        .format("delta")
+        .mode(SaveMode.Overwrite)
+        .insertInto(deltaTableToWrite)
+    }
 
-    def writeToParquet(parquetTablePath: String): Unit =
+    def writeToParquet(parquetTablePath: String): Unit = {
       df.write
         .mode(SaveMode.Overwrite)
         .parquet(parquetTablePath)
+    }
   }
 
   /**
@@ -132,11 +140,13 @@ class JDBCImport(databricksScope: String,
 }
 
 object JDBCImport {
-  def apply(scope: String,
-            importConfig: ImportConfig,
-            jdbcParams: Map[String, String] = Map(),
-            dataTransforms: DataTransforms = new DataTransforms(Seq.empty))
-           (implicit spark: SparkSession): JDBCImport = {
+
+  def apply(
+      scope: String,
+      importConfig: ImportConfig,
+      jdbcParams: Map[String, String] = Map(),
+      dataTransforms: DataTransforms = new DataTransforms(Seq.empty)
+  )(implicit spark: SparkSession): JDBCImport = {
 
     new JDBCImport(scope, importConfig, jdbcParams, dataTransforms)
   }

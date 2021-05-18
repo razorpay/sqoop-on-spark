@@ -26,26 +26,27 @@ object ImportRunner extends App {
 
   val config = new ImportRunnerConfig(args)
 
-    implicit val spark = SparkSession
-      .builder()
-      .appName("sqoop-on-spark")
-      .getOrCreate()
+  implicit val spark = SparkSession
+    .builder()
+    .appName("sqoop-on-spark")
+    .getOrCreate()
 
-    val importConfig = ImportConfig(
-      config.source(),
-      config.destination(),
-      config.splitBy(),
-      config.chunks(),
-      config.partitionBy(),
-      config.database())
+  val importConfig = ImportConfig(
+    config.source(),
+    config.destination(),
+    config.splitBy(),
+    config.chunks(),
+    config.partitionBy(),
+    config.database()
+  )
 
-    val transforms = new DataTransforms(Seq.empty)
+  val transforms = new DataTransforms(Seq.empty)
 
-   JDBCImport(
-      scope = config.scope(),
-      importConfig = importConfig,
-      dataTransforms = transforms
-   ).run
+  JDBCImport(
+    scope = config.scope(),
+    importConfig = importConfig,
+    dataTransforms = transforms
+  ).run
 }
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -53,12 +54,12 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val jarName = "sql-delta-import.jar"
 
   banner("\nOptions:\n")
-  footer(
-    s"""Usage:
+  footer(s"""Usage:
       |spark-submit {spark options} --class $className $jarName OPTIONS
       |""".stripMargin)
 
-  override def mainOptions: Seq[String] = Seq("scope", "source", "destination", "splitBy", "database")
+  override def mainOptions: Seq[String] =
+    Seq("scope", "source", "destination", "splitBy", "database")
 
   val scope: ScallopOption[String] = opt[String](required = true)
   val source: ScallopOption[String] = opt[String](required = true)
