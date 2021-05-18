@@ -202,54 +202,6 @@ lazy val hiveMR = (project in file("hive-mr")) dependsOn(hive % "test->test") se
   )
 )
 
-lazy val hiveTez = (project in file("hive-tez")) dependsOn(hive % "test->test") settings (
-  name := "hive-tez",
-  commonSettings,
-  skipReleaseSettings,
-  libraryDependencies ++= Seq(
-    "org.apache.hadoop" % "hadoop-client" % hadoopVersion % "provided" excludeAll (
-      ExclusionRule(organization = "com.google.protobuf")
-      ),
-    "org.apache.parquet" % "parquet-hadoop" % "1.10.1" excludeAll(
-      ExclusionRule("org.apache.hadoop", "hadoop-client")
-      ),
-    "com.google.protobuf" % "protobuf-java" % "2.5.0",
-    "org.apache.hive" % "hive-exec" % hiveVersion % "provided" classifier "core" excludeAll(
-      ExclusionRule(organization = "org.apache.spark"),
-      ExclusionRule(organization = "org.apache.parquet"),
-      ExclusionRule("org.pentaho", "pentaho-aggdesigner-algorithm"),
-      ExclusionRule(organization = "com.google.protobuf")
-    ),
-    "org.jodd" % "jodd-core" % "3.5.2",
-    "org.apache.hive" % "hive-metastore" % hiveVersion % "provided" excludeAll(
-      ExclusionRule(organization = "org.apache.spark"),
-      ExclusionRule(organization = "org.apache.parquet"),
-      ExclusionRule("org.apache.hive", "hive-exec")
-    ),
-    "org.apache.hadoop" % "hadoop-common" % hadoopVersion % "test" classifier "tests",
-    "org.apache.hadoop" % "hadoop-mapreduce-client-hs" % hadoopVersion % "test",
-    "org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % hadoopVersion % "test" classifier "tests",
-    "org.apache.hadoop" % "hadoop-yarn-server-tests" % hadoopVersion % "test" classifier "tests",
-    "org.apache.hive" % "hive-cli" % hiveVersion % "test" excludeAll(
-      ExclusionRule(organization = "org.apache.spark"),
-      ExclusionRule(organization = "org.apache.parquet"),
-      ExclusionRule("ch.qos.logback", "logback-classic"),
-      ExclusionRule("org.pentaho", "pentaho-aggdesigner-algorithm"),
-      ExclusionRule("org.apache.hive", "hive-exec"),
-      ExclusionRule(organization = "com.google.protobuf")
-    ),
-    "org.apache.hadoop" % "hadoop-yarn-common" % hadoopVersion % "test",
-    "org.apache.hadoop" % "hadoop-yarn-api" % hadoopVersion % "test",
-    "org.apache.tez" % "tez-mapreduce" % "0.8.4" % "test",
-    "org.apache.tez" % "tez-dag" % "0.8.4" % "test",
-    "org.apache.tez" % "tez-tests" % "0.8.4" % "test" classifier "tests",
-    // TODO Figure out how this fixes some bad dependency
-    "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-    "io.delta" %% "delta-core" % deltaVersion % "test" excludeAll ExclusionRule("org.apache.hadoop")
-  )
-)
-
 lazy val standalone = (project in file("standalone"))
   .settings(
     name := "delta-standalone",
@@ -291,9 +243,9 @@ lazy val standalone = (project in file("standalone"))
         .map(_.filterNot(_.getCanonicalPath.contains("/internal/")))
         // ignore project `hive` which depends on this project
         .map(_.filterNot(_.getCanonicalPath.contains("/hive/")))
-    },
+    }
     // Ensure unidoc is run with tests. Must be cleaned before test for unidoc to be generated.
-    (test in Test) := ((test in Test) dependsOn unidoc.in(Compile)).value
+   // (test in Test) := ((test in Test) dependsOn unidoc.in(Compile)).value
   )
   .settings(releaseSettings)
 
@@ -327,7 +279,10 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
       "com.h2database" % "h2" % "1.4.200" % "test",
       "org.apache.spark" % "spark-catalyst_2.12" % "3.0.0" % "test",
       "org.apache.spark" % "spark-core_2.12" % "3.0.0" % "test",
-      "org.apache.spark" % "spark-sql_2.12" % "3.0.0" % "test"
+      "org.apache.spark" % "spark-sql_2.12" % "3.0.0" % "test",
+      "mysql" % "mysql-connector-java" % "8.0.25",
+      "org.postgresql" % "postgresql" % "42.2.20",
+      "com.databricks" %% "dbutils-api" % "0.0.5"
     )
   )
   .settings(releaseSettings)

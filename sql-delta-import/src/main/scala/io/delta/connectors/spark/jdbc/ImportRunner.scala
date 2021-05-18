@@ -24,19 +24,19 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
  */
 object ImportRunner extends App {
 
-  override def main(args: Array[String]): Unit = {
-    val config = new ImportRunnerConfig(args)
+  val config = new ImportRunnerConfig(args)
 
     implicit val spark = SparkSession
       .builder()
-      .appName("sql-delta-import")
+      .appName("sqoop-on-spark")
       .getOrCreate()
 
     val importConfig = ImportConfig(
       config.source(),
       config.destination(),
       config.splitBy(),
-      config.chunks())
+      config.chunks(),
+      config.partitionBy())
 
     val transforms = new DataTransforms(Seq.empty)
 
@@ -45,7 +45,7 @@ object ImportRunner extends App {
       importConfig = importConfig,
       dataTransforms = transforms
    ).run
-  }
+
 }
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -65,6 +65,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val destination: ScallopOption[String] = opt[String](required = true)
   val splitBy: ScallopOption[String] = opt[String](required = true)
   val chunks: ScallopOption[Int] = opt[Int](default = Some(10))
+  val partitionBy: ScallopOption[String] = opt[String]
 
   verify()
 }
