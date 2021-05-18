@@ -32,7 +32,7 @@ import java.util.Properties
  * @param chunks      - to how many chunks split jdbc source data
  */
 case class ImportConfig(source: String, destination: String, splitBy: String, chunks: Int,
-                        partitionBy: String) {
+                        partitionBy: String, database: String) {
   val bounds_sql =
     s"""
   (select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $source) as bounds
@@ -42,13 +42,13 @@ case class ImportConfig(source: String, destination: String, splitBy: String, ch
 /**
  * Class that does reading from JDBC source, transform and writing to Delta table
  *
- * @param jdbcUrl       - databricks secret scope  for jdbc source
+ * @param databricksScope       - databricks secret scope  for jdbc source
  * @param importConfig  - case class that contains source read parallelism params and target table
  * @param jdbcParams    - additional JDBC session params like isolation level, perf tuning,
  *                      net wait params etc...
  * @param dataTransform - contains function that we should apply to transform our source data
  */
-class JDBCImport(jdbcUrl: String,
+class JDBCImport(databricksScope: String,
                  importConfig: ImportConfig,
                  jdbcParams: Map[String, String] = Map(),
                  dataTransform: DataTransforms)
@@ -58,18 +58,23 @@ class JDBCImport(jdbcUrl: String,
 
   implicit def mapToProperties(m: Map[String, String]): Properties = {
     val properties = new Properties()
-    val jdbcUsername = dbutils.secrets.get(scope = jdbcUrl, key = "username")
-    val jdbcPassword = dbutils.secrets.get(scope = jdbcUrl, key = "password")
-    properties.put("user", s"${jdbcUsername}")
-    properties.put("password", s"${jdbcPassword}")
+    val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "username")
+    val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "password")
+    properties.put("user", jdbcUsername)
+    properties.put("password", jdbcPassword)
     m.foreach(pair => properties.put(pair._1, pair._2))
     properties
   }
 
   def buildJdbcUrl: String = {
-    val url = dbutils.secrets.get(scope = jdbcUrl, key = "host")
-    val db = dbutils.secrets.get(scope = jdbcUrl, key = "database")
-    val connectionUrl = s"${url}/${db}"
+    val host = dbutils.secrets.get(scope = databricksScope, key = "DB_HOST")
+    val port = dbutils.secrets.get(scope = databricksScope, key = "DB_PORT")
+    val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
+
+    val database = importConfig.database
+
+    val connectionUrl = s"jdbc:$dbType//$host:$port/$database"
+
     connectionUrl
   }
 

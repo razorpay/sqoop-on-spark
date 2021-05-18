@@ -36,7 +36,8 @@ object ImportRunner extends App {
       config.destination(),
       config.splitBy(),
       config.chunks(),
-      config.partitionBy())
+      config.partitionBy(),
+      config.database())
 
     val transforms = new DataTransforms(Seq.empty)
 
@@ -45,7 +46,6 @@ object ImportRunner extends App {
       importConfig = importConfig,
       dataTransforms = transforms
    ).run
-
 }
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -58,7 +58,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
       |spark-submit {spark options} --class $className $jarName OPTIONS
       |""".stripMargin)
 
-  override def mainOptions: Seq[String] = Seq("jdbcUrl", "source", "destination", "splitBy")
+  override def mainOptions: Seq[String] = Seq("databricksScope", "source", "destination", "splitBy", "database")
 
   val jdbcUrl: ScallopOption[String] = opt[String](required = true)
   val source: ScallopOption[String] = opt[String](required = true)
@@ -66,6 +66,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val splitBy: ScallopOption[String] = opt[String](required = true)
   val chunks: ScallopOption[Int] = opt[Int](default = Some(10))
   val partitionBy: ScallopOption[String] = opt[String]
+  val database: ScallopOption[String] = opt[String](required = true)
 
   verify()
 }

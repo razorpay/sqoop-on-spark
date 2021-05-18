@@ -1,0 +1,47 @@
+name: sqoop_spark CI
+
+# Controls when the action will run. Triggers the workflow on a push
+# if changes are made in sql-delta-import module
+on:
+  push:
+    paths:
+      - 'sql-delta-import/**'
+
+jobs:
+  build:
+    name: Build Sqoop on Spark
+    runs-on: [self-hosted]
+    env:
+      APP_NAME: spark_sqoop
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout Codebase
+        uses: actions/checkout@v2
+      - name: Build and Push Docker Image to Harbor
+        uses: docker/build-push-action@v1
+        with:
+          dockerfile: sql-delta-import/Dockerfile
+          registry: c.rzp.io
+          repository: razorpay/sqoop_on_spark
+          username: ${{ secrets.HARBOR_DOCKER_USERNAME }}
+          password: ${{ secrets.HARBOR_DOCKER_PASSWORD }}
+          tags: sqoop_on_spark-${{ github.sha }}
+      - name: Update Build Status Succeeded
+        if: success()
+        run: |
+          echo 'Status check has passed!'
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: token ${{ github.token }}" \
+          -d '{ "state" : "success" , "context" : "'github/${APP_NAME}-status-check'" , "description" : "'github/${APP_NAME}-status-check'", "target_url" : "https://github.com/razorpay/datahub" }' \
+          https://api.github.com/repos/razorpay/datahub/statuses/${GITHUB_SHA}
+          exit 0
+      - name: Send Master Build Failed Notification to Slack
+        if: failure() && github.event.pull_request.merged == true
+        env:
+          SLACK_MESSAGE: 'Master Build failed.'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_USERNAME: Github Actions
+          SLACK_CHANNEL: tech_analytics_alerts
+          SLACK_ICON: https://avatars3.githubusercontent.com/u/9919?s=40&v=4
+        uses:  rtCamp/action-slack-notify@v2.0.2
