@@ -26,14 +26,14 @@ object ImportRunner extends App {
 
   val config = new ImportRunnerConfig(args)
 
-  implicit val spark = SparkSession
+  implicit val spark: SparkSession = SparkSession
     .builder()
     .appName("sqoop-on-spark")
     .getOrCreate()
 
   val importConfig = ImportConfig(
     config.source(),
-    config.destination(),
+    config.tableName(),
     config.splitBy(),
     config.chunks(),
     config.partitionBy(),
@@ -46,24 +46,16 @@ object ImportRunner extends App {
     scope = config.scope(),
     importConfig = importConfig,
     dataTransforms = transforms
-  ).run
+  ).run()
 }
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
-  val className = "io.delta.connectors.spark.jdbc.ImportRunner"
-  val jarName = "sql-delta-import.jar"
-
-  banner("\nOptions:\n")
-  footer(s"""Usage:
-      |spark-submit {spark options} --class $className $jarName OPTIONS
-      |""".stripMargin)
-
   override def mainOptions: Seq[String] =
-    Seq("scope", "source", "destination", "splitBy", "database")
+    Seq("scope", "source", "tableName", "splitBy", "database")
 
   val scope: ScallopOption[String] = opt[String](required = true)
   val source: ScallopOption[String] = opt[String](required = true)
-  val destination: ScallopOption[String] = opt[String](required = true)
+  val tableName: ScallopOption[String] = opt[String](required = true)
   val splitBy: ScallopOption[String] = opt[String](required = true)
   val chunks: ScallopOption[Int] = opt[Int](default = Some(10))
   val partitionBy: ScallopOption[String] = opt[String](default = Some("created_date"))

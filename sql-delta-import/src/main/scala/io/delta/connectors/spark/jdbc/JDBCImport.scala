@@ -31,7 +31,7 @@ import java.util.Properties
  */
 case class ImportConfig(
     source: String,
-    destination: String,
+    tableName: String,
     splitBy: String,
     chunks: Int,
     partitionBy: String,
@@ -125,7 +125,8 @@ class JDBCImport(
     def writeToParquet(parquetTablePath: String): Unit = {
       df.write
         .mode(SaveMode.Overwrite)
-        .parquet(parquetTablePath)
+//        .parquet(parquetTablePath)
+        .saveAsTable(s"test.$parquetTablePath")
     }
   }
 
@@ -135,7 +136,7 @@ class JDBCImport(
   def run(): Unit = {
     sourceDataframe
       .runTransform()
-      .writeToParquet(importConfig.destination)
+      .writeToParquet(importConfig.tableName)
   }
 }
 
