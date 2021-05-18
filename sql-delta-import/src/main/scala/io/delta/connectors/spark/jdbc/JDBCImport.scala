@@ -58,8 +58,8 @@ class JDBCImport(databricksScope: String,
 
   implicit def mapToProperties(m: Map[String, String]): Properties = {
     val properties = new Properties()
-    val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "username")
-    val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "password")
+    val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
+    val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
     properties.put("user", jdbcUsername)
     properties.put("password", jdbcPassword)
     m.foreach(pair => properties.put(pair._1, pair._2))
@@ -132,12 +132,12 @@ class JDBCImport(databricksScope: String,
 }
 
 object JDBCImport {
-  def apply(jdbcUrl: String,
+  def apply(scope: String,
             importConfig: ImportConfig,
             jdbcParams: Map[String, String] = Map(),
             dataTransforms: DataTransforms = new DataTransforms(Seq.empty))
            (implicit spark: SparkSession): JDBCImport = {
 
-    new JDBCImport(jdbcUrl, importConfig, jdbcParams, dataTransforms)
+    new JDBCImport(scope, importConfig, jdbcParams, dataTransforms)
   }
 }
