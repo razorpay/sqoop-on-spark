@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build Sqoop on Spark
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
     env:
       APP_NAME: spark_sqoop
     # Steps represent a sequence of tasks that will be executed as part of the job
