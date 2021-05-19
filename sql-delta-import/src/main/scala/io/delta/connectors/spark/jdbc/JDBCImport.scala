@@ -33,22 +33,21 @@ import java.util.Properties
  */
 case class ImportConfig(
     inputTable: String,
-    query: String,
-    boundaryQuery: String,
+    query: Option[String],
+    boundaryQuery: Option[String],
     outputTable: String,
     splitBy: String,
     chunks: Int,
-    partitionBy: String,
+    partitionBy: Option[String],
     database: String
 ) {
+  val boundsSql: String = if (boundaryQuery.isEmpty) {
+    s"(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
+  } else { boundaryQuery.get }
 
-  val boundsSql: String = if (boundaryQuery == null) {
-    "(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
-  } else boundaryQuery
-
-  val jdbcQuery: String = if (query == null) {
+  val jdbcQuery: String = if (query.isEmpty) {
     inputTable
-  } else query
+  } else { query.get }
 }
 
 /**
@@ -153,8 +152,8 @@ class JDBCImport(
       .runTransform()
 
     importConfig.partitionBy match {
-      case null => df.writeToParquet(importConfig.outputTable)
-      case _    => df.writeAsPartitioned(importConfig.outputTable, importConfig.partitionBy)
+      case None                  => df.writeToParquet(importConfig.outputTable)
+      case Some(partitionColumn) => df.writeAsPartitioned(importConfig.outputTable, partitionColumn)
     }
   }
 }
