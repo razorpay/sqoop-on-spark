@@ -17,6 +17,8 @@
 package io.delta.connectors.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
+import org.apache.spark.sql.functions.{col, from_unixtime, lit}
+import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import java.util.Properties
@@ -30,18 +32,23 @@ import java.util.Properties
  * @param chunks      - to how many chunks split jdbc source data
  */
 case class ImportConfig(
-    source: String,
-    tableName: String,
+    inputTable: String,
+    query: String,
+    boundaryQuery: String,
+    outputTable: String,
     splitBy: String,
     chunks: Int,
     partitionBy: String,
     database: String
 ) {
 
-  val bounds_sql =
-    s"""
-  (select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $source) as bounds
-  """
+  val boundsSql: String = if (boundaryQuery == null) {
+    "(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
+  } else boundaryQuery
+
+  val jdbcQuery: String = if (query == null) {
+    inputTable
+  } else query
 }
 
 /**
@@ -94,7 +101,7 @@ class JDBCImport(
   private def readJDBCSourceInParallel(): DataFrame = {
 
     val (lower, upper) = spark.read
-      .jdbc(buildJdbcUrl, importConfig.bounds_sql, jdbcParams)
+      .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
       .as[(Option[Long], Option[Long])]
       .take(1)
       .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
@@ -102,7 +109,7 @@ class JDBCImport(
 
     spark.read.jdbc(
       buildJdbcUrl,
-      importConfig.source,
+      importConfig.jdbcQuery,
       importConfig.splitBy,
       lower,
       upper,
@@ -115,18 +122,26 @@ class JDBCImport(
 
     def runTransform(): DataFrame = dataTransform.runTransform(sourceDataframe)
 
-    def writeToDelta(deltaTableToWrite: String): Unit = {
+    def writeToParquet(outputTable: String): Unit = {
       df.write
-        .format("delta")
         .mode(SaveMode.Overwrite)
-        .insertInto(deltaTableToWrite)
+        .saveAsTable(outputTable)
     }
 
-    def writeToParquet(parquetTablePath: String): Unit = {
-      df.write
+    def writeAsPartitioned(outputTable: String, partitionColumn: String): Unit = {
+      val partitionedDf = partitionColumn match {
+        case "created_date" =>
+          df.withColumn(
+            partitionColumn,
+            from_unixtime(col("created_at").cast(IntegerType) + lit(19800), "yyyy-MM-dd")
+          )
+        case _ => df
+      }
+
+      partitionedDf.write
         .mode(SaveMode.Overwrite)
-//        .parquet(parquetTablePath)
-        .saveAsTable(s"test.$parquetTablePath")
+        .partitionBy(partitionColumn)
+        .saveAsTable(outputTable)
     }
   }
 
@@ -134,9 +149,13 @@ class JDBCImport(
    * Runs transform against dataframe read from jdbc and writes it to Delta table
    */
   def run(): Unit = {
-    sourceDataframe
+    val df = sourceDataframe
       .runTransform()
-      .writeToParquet(importConfig.tableName)
+
+    importConfig.partitionBy match {
+      case null => df.writeToParquet(importConfig.outputTable)
+      case _    => df.writeAsPartitioned(importConfig.outputTable, importConfig.partitionBy)
+    }
   }
 }
 

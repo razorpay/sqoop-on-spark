@@ -32,8 +32,10 @@ object ImportRunner extends App {
     .getOrCreate()
 
   val importConfig = ImportConfig(
-    config.source(),
-    config.tableName(),
+    config.inputTable(),
+    config.query(),
+    config.boundaryQuery(),
+    config.outputTable(),
     config.splitBy(),
     config.chunks(),
     config.partitionBy(),
@@ -51,15 +53,17 @@ object ImportRunner extends App {
 
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
   override def mainOptions: Seq[String] =
-    Seq("scope", "source", "tableName", "splitBy", "database")
+    Seq("scope", "inputTable", "outputTable", "splitBy", "database")
 
   val scope: ScallopOption[String] = opt[String](required = true)
-  val source: ScallopOption[String] = opt[String](required = true)
-  val tableName: ScallopOption[String] = opt[String](required = true)
+  val database: ScallopOption[String] = opt[String](required = true)
+  val inputTable: ScallopOption[String] = opt[String](required = true)
+  val query: ScallopOption[String] = opt[String](default = null)
+  val boundaryQuery: ScallopOption[String] = opt[String](default = null)
+  val outputTable: ScallopOption[String] = opt[String](required = true)
   val splitBy: ScallopOption[String] = opt[String](required = true)
   val chunks: ScallopOption[Int] = opt[Int](default = Some(10))
   val partitionBy: ScallopOption[String] = opt[String](default = Some("created_date"))
-  val database: ScallopOption[String] = opt[String](required = true)
 
   verify()
 }
