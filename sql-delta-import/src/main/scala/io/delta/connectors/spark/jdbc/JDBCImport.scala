@@ -41,13 +41,12 @@ case class ImportConfig(
     partitionBy: Option[String],
     database: String
 ) {
-  val boundsSql: String = if (boundaryQuery.isEmpty) {
-    s"(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
-  } else { boundaryQuery.get }
 
-  val jdbcQuery: String = if (query.isEmpty) {
-    inputTable
-  } else { query.get }
+  val boundsSql: String = boundaryQuery.getOrElse(
+    s"(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
+  )
+
+  val jdbcQuery: String = query.getOrElse(inputTable)
 }
 
 /**
@@ -130,10 +129,12 @@ class JDBCImport(
     def writeAsPartitioned(outputTable: String, partitionColumn: String): Unit = {
       val partitionedDf = partitionColumn match {
         case "created_date" =>
-          df.withColumn(
-            partitionColumn,
-            from_unixtime(col("created_at").cast(IntegerType) + lit(19800), "yyyy-MM-dd")
-          )
+          if (df.columns.contains("created_at")) {
+            df.withColumn(
+              partitionColumn,
+              from_unixtime(col("created_at").cast(IntegerType) + lit(19800), "yyyy-MM-dd")
+            )
+          } else { df }
         case _ => df
       }
 
@@ -148,8 +149,7 @@ class JDBCImport(
    * Runs transform against dataframe read from jdbc and writes it to Delta table
    */
   def run(): Unit = {
-    val df = sourceDataframe
-      .runTransform()
+    val df = sourceDataframe.runTransform()
 
     importConfig.partitionBy match {
       case None                  => df.writeToParquet(importConfig.outputTable)
