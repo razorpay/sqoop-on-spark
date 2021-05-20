@@ -140,7 +140,7 @@ class JDBCImport(
     def writeAsPartitioned(outputTable: String, partitionColumn: String): Unit = {
       val partitionedDf = partitionColumn match {
         case "created_date" =>
-          if (df.columns.contains("created_at")) {
+          if (df.columns.contains("created_at") && !df.columns.contains("created_date")) {
             df.withColumn(
               partitionColumn,
               from_unixtime(col("created_at").cast(IntegerType) + lit(19800), "yyyy-MM-dd")
