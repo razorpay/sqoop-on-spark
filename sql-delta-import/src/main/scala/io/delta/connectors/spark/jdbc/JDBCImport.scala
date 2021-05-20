@@ -70,6 +70,8 @@ class JDBCImport(
     val properties = new Properties()
     val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
     val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
+    val driverClass = "com.mysql.cj.jdbc.Driver"
+    properties.setProperty("Driver", driverClass)
     properties.put("user", jdbcUsername)
     properties.put("password", jdbcPassword)
     m.foreach(pair => properties.put(pair._1, pair._2))
