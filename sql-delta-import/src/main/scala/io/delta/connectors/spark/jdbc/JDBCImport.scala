@@ -99,6 +99,7 @@ class JDBCImport(
 
     val (lower, upper) = spark.read
       .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
+      .selectExpr("cast(lower_bound as long) lower_bound","upper_bound")
       .as[(Option[Long], Option[Long])]
       .take(1)
       .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
