@@ -23,7 +23,7 @@ crossScalaVersions in ThisBuild := Seq("2.12.8", "2.11.12")
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 lazy val testScalastyle = taskKey[Unit]("testScalastyle")
 
-val sparkVersion = "2.4.3"
+val sparkVersion = "3.0.0"
 val hadoopVersion = "2.7.2"
 val hiveVersion = "2.3.7"
 val deltaVersion = "0.5.0"
@@ -133,9 +133,9 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
       "org.rogach" %% "scallop" % "3.5.1",
       "org.scalatest" %% "scalatest" % "3.1.1" % "test",
       "com.h2database" % "h2" % "1.4.200" % "test",
-      "org.apache.spark" % "spark-catalyst_2.12" % "3.0.0" % "test",
-      "org.apache.spark" % "spark-core_2.12" % "3.0.0" % "test",
-      "org.apache.spark" % "spark-sql_2.12" % "3.0.0" % "test",
+      "org.apache.spark" % "spark-catalyst_2.12" % sparkVersion % "test",
+      "org.apache.spark" % "spark-core_2.12" % sparkVersion % "test",
+      "org.apache.spark" % "spark-sql_2.12" % sparkVersion % "test",
       "mysql" % "mysql-connector-java" % "8.0.25",
       "org.postgresql" % "postgresql" % "42.2.20",
       "com.databricks" %% "dbutils-api" % "0.0.5"

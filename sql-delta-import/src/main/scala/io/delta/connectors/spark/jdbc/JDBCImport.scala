@@ -41,7 +41,6 @@ case class ImportConfig(
     partitionBy: Option[String],
     database: String
 ) {
-
   val boundsSql: String = boundaryQuery.getOrElse(
     s"(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
   )
