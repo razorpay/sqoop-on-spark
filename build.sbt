@@ -130,7 +130,6 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
     publishArtifact in Test := false,
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
-      "io.delta" % "delta-core_2.12" % "0.7.0" % "provided",
       "org.rogach" %% "scallop" % "3.5.1",
       "org.scalatest" %% "scalatest" % "3.1.1" % "test",
       "com.h2database" % "h2" % "1.4.200" % "test",

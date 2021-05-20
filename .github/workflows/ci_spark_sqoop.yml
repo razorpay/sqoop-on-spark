@@ -22,10 +22,10 @@ jobs:
         uses: docker/build-push-action@v1
         with:
           dockerfile: sql-delta-import/Dockerfile
-          repository: razorpay/sqoop_on_spark
+          repository: razorpay/sqoop-on-spark
           username: ${{ secrets.PUBLIC_DOCKER_USERNAME }}
           password: ${{ secrets.PUBLIC_DOCKER_PASSWORD }}
-          tags: sqoop_on_spark-${{ github.sha }}
+          tags: sqoop-${{ github.sha }}
       - name: Update Build Status Succeeded
         if: success()
         run: |
