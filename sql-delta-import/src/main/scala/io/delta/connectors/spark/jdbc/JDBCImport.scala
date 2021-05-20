@@ -70,10 +70,19 @@ class JDBCImport(
     val properties = new Properties()
     val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
     val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
-    val driverClass = "com.mysql.cj.jdbc.Driver"
-    properties.setProperty("Driver", driverClass)
+
+    val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
+
+    if (dbType == "mysql") {
+      properties.setProperty("driver", "com.mysql.cj.jdbc.Driver")
+    } else if (dbType == "postgresql") {
+      properties.setProperty("driver", "org.postgresql.Driver")
+    }
+
+    properties.setProperty("queryTimeout", "10800")
     properties.put("user", jdbcUsername)
     properties.put("password", jdbcPassword)
+
     m.foreach(pair => properties.put(pair._1, pair._2))
     properties
   }
@@ -115,7 +124,7 @@ class JDBCImport(
       upper,
       importConfig.chunks,
       jdbcParams
-    )
+    ).where(s"${importConfig.splitBy} >= $lower")
   }
 
   private implicit class DataFrameExtensionOps(df: DataFrame) {
