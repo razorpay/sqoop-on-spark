@@ -36,13 +36,15 @@ case class ImportConfig(
     query: Option[String],
     boundaryQuery: Option[String],
     outputTable: String,
-    splitBy: String,
+    splitBy: Option[String],
     chunks: Int,
     partitionBy: Option[String],
     database: String
 ) {
+  val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
+
   val boundsSql: String = boundaryQuery.getOrElse(
-    s"(select min($splitBy) as lower_bound, max($splitBy) as upper_bound from $inputTable) as bounds"
+    s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTable) as bounds"
   )
 
   val jdbcQuery: String = query.getOrElse(inputTable)
@@ -108,23 +110,29 @@ class JDBCImport(
    */
   private def readJDBCSourceInParallel(): DataFrame = {
 
-    val (lower, upper) = spark.read
-      .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
-      .selectExpr("cast(lower_bound as long) lower_bound","upper_bound")
-      .as[(Option[Long], Option[Long])]
-      .take(1)
-      .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
-      .head
+    if (importConfig.splitBy.nonEmpty) {
+      val (lower, upper) = spark.read
+        .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
+        .selectExpr("cast(min as long) min", "max")
+        .as[(Option[Long], Option[Long])]
+        .take(1)
+        .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
+        .head
 
-    spark.read.jdbc(
-      buildJdbcUrl,
-      importConfig.jdbcQuery,
-      importConfig.splitBy,
-      lower,
-      upper,
-      importConfig.chunks,
-      jdbcParams
-    ).where(s"${importConfig.splitBy} >= $lower")
+      spark.read
+        .jdbc(
+          buildJdbcUrl,
+          importConfig.jdbcQuery,
+          importConfig.splitColumn,
+          lower,
+          upper,
+          importConfig.chunks,
+          jdbcParams
+        )
+        .where(s"${importConfig.splitColumn} >= $lower")
+    } else {
+      spark.read.jdbc(buildJdbcUrl, importConfig.inputTable, jdbcParams)
+    }
   }
 
   private implicit class DataFrameExtensionOps(df: DataFrame) {

@@ -36,7 +36,7 @@ object ImportRunner extends App {
     config.query.toOption,
     config.boundaryQuery.toOption,
     config.outputTable(),
-    config.splitBy(),
+    config.splitBy.toOption,
     config.chunks(),
     config.partitionBy.toOption,
     config.database()
@@ -61,8 +61,8 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val query: ScallopOption[String] = opt[String](required = false)
   val boundaryQuery: ScallopOption[String] = opt[String](required = false)
   val outputTable: ScallopOption[String] = opt[String](required = true)
-  val splitBy: ScallopOption[String] = opt[String](required = true)
-  val chunks: ScallopOption[Int] = opt[Int](default = Some(10))
+  val splitBy: ScallopOption[String] = opt[String](required = false)
+  val chunks: ScallopOption[Int] = opt[Int](default = Some(1))
   val partitionBy: ScallopOption[String] = opt[String](required = false)
 
   verify()
