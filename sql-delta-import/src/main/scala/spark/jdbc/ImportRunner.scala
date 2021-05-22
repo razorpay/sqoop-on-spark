@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.delta.connectors.spark.jdbc
+package spark.jdbc
 
 import org.apache.spark.sql.SparkSession
 import org.rogach.scallop.{ScallopConf, ScallopOption}

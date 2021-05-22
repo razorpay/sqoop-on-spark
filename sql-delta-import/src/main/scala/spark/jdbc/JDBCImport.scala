@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package io.delta.connectors.spark.jdbc
+package spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import org.apache.spark.sql.functions.{col, from_unixtime, lit}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import spark.jdbc.common.Constants
 
 import java.util.Properties
 
@@ -76,12 +77,12 @@ class JDBCImport(
     val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
 
     if (dbType == "mysql") {
-      properties.setProperty("driver", "com.mysql.cj.jdbc.Driver")
+      properties.setProperty("driver", Constants.MYSQL_DRIVER)
     } else if (dbType == "postgresql") {
-      properties.setProperty("driver", "org.postgresql.Driver")
+      properties.setProperty("driver", Constants.POSTGRESQL_DRIVER)
     }
 
-    properties.setProperty("queryTimeout", "10800")
+    properties.setProperty("queryTimeout", Constants.QUERY_TIMEOUT.toString)
     properties.put("user", jdbcUsername)
     properties.put("password", jdbcPassword)
 
@@ -147,11 +148,14 @@ class JDBCImport(
 
     def writeAsPartitioned(outputTable: String, partitionColumn: String): Unit = {
       val partitionedDf = partitionColumn match {
-        case "created_date" =>
-          if (df.columns.contains("created_at") && !df.columns.contains("created_date")) {
+        case Constants.CREATED_DATE =>
+          if (
+            df.columns
+              .contains(Constants.CREATED_AT) && !df.columns.contains(Constants.CREATED_DATE)
+          ) {
             df.withColumn(
               partitionColumn,
-              from_unixtime(col("created_at").cast(IntegerType) + lit(19800), "yyyy-MM-dd")
+              from_unixtime(col(Constants.CREATED_AT).cast(IntegerType) + lit(19800), "yyyy-MM-dd")
             )
           } else { df }
         case _ => df

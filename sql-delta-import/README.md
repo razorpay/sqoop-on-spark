@@ -53,7 +53,6 @@ optimized - avoid small files and skewed file sizes.
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import io.delta.connectors.spark.jdbc._
 
 implicit val spark: SparkSession = SparkSession
         .builder()
