@@ -12,7 +12,7 @@ jobs:
     name: Build Sqoop on Spark
     runs-on: ubuntu-latest
     env:
-      APP_NAME: spark_sqoop
+      APP_NAME: sqoop
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -31,8 +31,8 @@ jobs:
         run: |
           echo 'Status check has passed!'
           curl -X POST -H "Content-Type: application/json" -H "Authorization: token ${{ github.token }}" \
-          -d '{ "state" : "success" , "context" : "'github/${APP_NAME}-status-check'" , "description" : "'github/${APP_NAME}-status-check'", "target_url" : "https://github.com/razorpay/datahub" }' \
-          https://api.github.com/repos/razorpay/datahub/statuses/${GITHUB_SHA}
+          -d '{ "state" : "success" , "context" : "'github/${APP_NAME}-status-check'" , "description" : "'github/${APP_NAME}-status-check'", "target_url" : "https://github.com/razorpay/sqoop-on-spark" }' \
+          https://api.github.com/repos/razorpay/sqoop-on-spark/statuses/${GITHUB_SHA}
           exit 0
       - name: Send Master Build Failed Notification to Slack
         if: failure() && github.event.pull_request.merged == true
@@ -43,4 +43,4 @@ jobs:
           SLACK_USERNAME: Github Actions
           SLACK_CHANNEL: tech_analytics_alerts
           SLACK_ICON: https://avatars3.githubusercontent.com/u/9919?s=40&v=4
-        uses:  rtCamp/action-slack-notify@v2.0.2
+        uses: rtCamp/action-slack-notify@v2.0.2

@@ -15,7 +15,8 @@ RUN \
     dpkg -i dumb-init_*.deb
 
 
-RUN build/sbt clean assembly
+RUN build/sbt clean assembly && \
+    chmod +x /app/sql-delta-import/dockerconf/entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--single-child", "/app/sql-delta-import/dockerconf/entrypoint.sh"]
 
