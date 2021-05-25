@@ -12,7 +12,9 @@ RUN \
 
 RUN \
     wget https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_amd64.deb && \
-    dpkg -i dumb-init_*.deb
+    dpkg -i dumb-init_*.deb && \
+    apt-get update && \
+    apt-get -y install awscli
 
 
 RUN build/sbt clean assembly && \
