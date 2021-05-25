@@ -13,7 +13,7 @@ upload_jar()
 }
 
 # Do the basic initialization and get the app type
-# if [[ "${APP_MODE}" != "dev" ]]
-# then
-upload_jar
-# fi
+if [[ "${APP_MODE}" != "dev" ]]
+then
+    upload_jar
+fi
