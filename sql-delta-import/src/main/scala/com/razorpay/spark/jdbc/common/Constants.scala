@@ -9,4 +9,10 @@ object Constants {
 
   final val CREATED_DATE = "created_date"
   final val CREATED_AT = "created_at"
+
+  final val COLUMN_DATATYPE_MAPPING = Map(
+    "bigint" -> "long"
+  )
+
+  final val STRING = "string"
 }

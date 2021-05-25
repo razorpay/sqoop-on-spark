@@ -40,7 +40,8 @@ case class ImportConfig(
     splitBy: Option[String],
     chunks: Int,
     partitionBy: Option[String],
-    database: String
+    database: String,
+    mapColumns: Option[String]
 ) {
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
 
@@ -63,8 +64,7 @@ case class ImportConfig(
 class JDBCImport(
     databricksScope: String,
     importConfig: ImportConfig,
-    jdbcParams: Map[String, String] = Map(),
-    dataTransform: DataTransforms
+    jdbcParams: Map[String, String] = Map()
 )(implicit val spark: SparkSession) {
 
   import spark.implicits._
@@ -138,8 +138,6 @@ class JDBCImport(
 
   private implicit class DataFrameExtensionOps(df: DataFrame) {
 
-    def runTransform(): DataFrame = dataTransform.runTransform(sourceDataframe)
-
     def writeToParquet(outputTable: String): Unit = {
       df.write
         .mode(SaveMode.Overwrite)
@@ -172,7 +170,9 @@ class JDBCImport(
    * Runs transform against dataframe read from jdbc and writes it to Delta table
    */
   def run(): Unit = {
-    val df = sourceDataframe.runTransform()
+    val df = if (importConfig.mapColumns.nonEmpty) {
+      DataTransforms.castColumns(sourceDataframe, importConfig.mapColumns.get)
+    } else { sourceDataframe }
 
     importConfig.partitionBy match {
       case None                  => df.writeToParquet(importConfig.outputTable)
@@ -186,10 +186,9 @@ object JDBCImport {
   def apply(
       scope: String,
       importConfig: ImportConfig,
-      jdbcParams: Map[String, String] = Map(),
-      dataTransforms: DataTransforms = new DataTransforms(Seq.empty)
+      jdbcParams: Map[String, String] = Map()
   )(implicit spark: SparkSession): JDBCImport = {
 
-    new JDBCImport(scope, importConfig, jdbcParams, dataTransforms)
+    new JDBCImport(scope, importConfig, jdbcParams)
   }
 }

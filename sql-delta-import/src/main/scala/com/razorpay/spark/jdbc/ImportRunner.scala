@@ -39,15 +39,13 @@ object ImportRunner extends App {
     config.splitBy.toOption,
     config.chunks(),
     config.partitionBy.toOption,
-    config.database()
+    config.database(),
+    config.mapColumns.toOption
   )
-
-  val transforms = new DataTransforms(Seq.empty)
 
   JDBCImport(
     scope = config.scope(),
-    importConfig = importConfig,
-    dataTransforms = transforms
+    importConfig = importConfig
   ).run()
 }
 
@@ -64,6 +62,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val splitBy: ScallopOption[String] = opt[String](required = false)
   val chunks: ScallopOption[Int] = opt[Int](default = Some(1))
   val partitionBy: ScallopOption[String] = opt[String](required = false)
+  val mapColumns: ScallopOption[String] = opt[String](required = false)
 
   verify()
 }

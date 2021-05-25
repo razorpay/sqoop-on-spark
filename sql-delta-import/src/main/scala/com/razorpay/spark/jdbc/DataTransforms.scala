@@ -16,18 +16,36 @@
 
 package com.razorpay.spark.jdbc
 
+import com.razorpay.spark.jdbc.common.Constants
 import org.apache.spark.sql.DataFrame
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * Class that applies transformation functions one by one on input DataFrame
  */
-class DataTransforms(transformations: Seq[DataFrame => DataFrame]) {
+object DataTransforms extends App {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  /**
-   * Executes functions against DataFrame
-   *
-   * @param df - input DataFrame against which functions need to be executed
-   * @return - modified by Seq of functions DataFrame
-   */
-  def runTransform(df: DataFrame): DataFrame = transformations.foldLeft(df)((v, f) => f(v))
+  def castColumns(df: DataFrame, columnMapping: String): DataFrame = {
+    val columnList = columnMapping.split(",").map(x => {
+      val schema = x.split("=")
+
+      (schema(0).trim, schema(1).trim)
+    })
+
+    var castedDf = df
+
+    columnList.foreach(x => {
+      if (df.columns.contains(x._1)) {
+        castedDf = castedDf
+          .withColumn(x._1, df.col(x._1)
+            .cast(Constants.COLUMN_DATATYPE_MAPPING.getOrElse(x._2, Constants.STRING)))
+      } else {
+        logger.error(s"${x._1} column does not exist in the table, skipping")
+      }
+    })
+
+    castedDf
+  }
+
 }
