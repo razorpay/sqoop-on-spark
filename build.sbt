@@ -18,7 +18,7 @@ import ReleaseTransformations._
 
 parallelExecution in ThisBuild := false
 scalastyleConfig in ThisBuild := baseDirectory.value / "scalastyle-config.xml"
-crossScalaVersions in ThisBuild := Seq("2.12.8", "2.11.12")
+crossScalaVersions in ThisBuild := Seq("2.12.8")
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 lazy val testScalastyle = taskKey[Unit]("testScalastyle")

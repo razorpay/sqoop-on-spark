@@ -19,8 +19,6 @@ resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.
 
 resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
 
-resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
-
 resolvers += Resolver.url(
   "typesafe sbt-plugins",
   url("https://dl.bintray.com/typesafe/sbt-plugins"))(Resolver.ivyStylePatterns)

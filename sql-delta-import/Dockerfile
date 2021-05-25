@@ -17,7 +17,7 @@ RUN \
     apt-get -y install awscli
 
 
-RUN build/sbt clean assembly && \
+RUN sbt clean assembly && \
     chmod +x /app/sql-delta-import/dockerconf/entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--single-child", "/app/sql-delta-import/dockerconf/entrypoint.sh"]
