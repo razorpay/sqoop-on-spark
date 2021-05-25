@@ -27,21 +27,26 @@ object DataTransforms extends App {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def castColumns(df: DataFrame, columnMapping: String): DataFrame = {
-    val columnList = columnMapping.split(",").map(x => {
-      val schema = x.split("=")
+    val columnList = columnMapping
+      .split(",")
+      .map(x => {
+        val schema = x.split("=")
 
-      (schema(0).trim, schema(1).trim)
-    })
+        (schema(0).trim, schema(1).trim)
+      })
 
     var castedDf = df
 
     columnList.foreach(x => {
       if (df.columns.contains(x._1)) {
         castedDf = castedDf
-          .withColumn(x._1, df.col(x._1)
-            .cast(Constants.COLUMN_DATATYPE_MAPPING.getOrElse(x._2, Constants.STRING)))
+          .withColumn(
+            x._1,
+            df.col(x._1)
+              .cast(Constants.COLUMN_DATATYPE_MAPPING.getOrElse(x._2, Constants.STRING))
+          )
       } else {
-        logger.error(s"${x._1} column does not exist in the table, skipping")
+        println(s"${x._1} column does not exist in the table, skipping")
       }
     })
 
