@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package spark.jdbc
+package com.razorpay.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
+import com.razorpay.spark.jdbc.common.Constants
 import org.apache.spark.sql.functions.{col, from_unixtime, lit}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import spark.jdbc.common.Constants
 
 import java.util.Properties
 

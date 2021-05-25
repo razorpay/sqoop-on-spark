@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package spark.jdbc
+package com.razorpay.spark.jdbc
 
 import org.apache.spark.sql.DataFrame
 

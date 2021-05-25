@@ -1,4 +1,4 @@
-package spark.jdbc.common
+package com.razorpay.spark.jdbc.common
 
 object Constants {
   final val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
