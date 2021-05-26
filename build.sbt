@@ -47,7 +47,8 @@ lazy val commonSettings = Seq(
   compileScalastyle := scalastyle.in(Compile).toTask("").value,
   (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value,
   testScalastyle := scalastyle.in(Test).toTask("").value,
-  (test in Test) := ((test in Test) dependsOn testScalastyle).value
+  (test in Test) := ((test in Test) dependsOn testScalastyle).value,
+  test in assembly := {}
 )
 
 lazy val releaseSettings = Seq(

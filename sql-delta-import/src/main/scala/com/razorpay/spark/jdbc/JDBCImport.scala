@@ -55,11 +55,10 @@ case class ImportConfig(
 /**
  * Class that does reading from JDBC source, transform and writing to Delta table
  *
- * @param databricksScope       - databricks secret scope  for jdbc source
- * @param importConfig  - case class that contains source read parallelism params and target table
- * @param jdbcParams    - additional JDBC session params like isolation level, perf tuning,
- *                      net wait params etc...
- * @param dataTransform - contains function that we should apply to transform our source data
+ * @param databricksScope  databricks secret scope  for jdbc source
+ * @param importConfig  case class that contains source read parallelism params and target table
+ * @param jdbcParams  additional JDBC session params like isolation level, perf tuning,
+ *                    net wait params etc.
  */
 class JDBCImport(
     databricksScope: String,
