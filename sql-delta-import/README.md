@@ -1,11 +1,8 @@
-# sql-delta-import
+# spark-sql-import
 
  Imports data from a relational database or any other JDBC source into your Delta Lake. 
  Import either entire table or only a subset of columns, control level of parallelism, 
  include any custom transformations
- 
-Destination delta table has to exist before import. It's schema will be used to infer 
-desired columns and their data types
 
 ## Basic Usage
 
@@ -18,10 +15,12 @@ destination delta table
 ```shell script
 spark-submit /
 --class "io.delta.connectors.spark.jdbc.ImportRunner" sql-delta-import.jar /
---jdbc-url jdbc:mysql://hostName:port/database /
---source source.table
---destination destination.table
---split-by id
+--scope "api"
+"--input-table" "payment_analytics"
+"--output-table" "sqoop_api.payment_analytics"
+"--database" "api"
+"--split-by" "created_at"
+"--partition-by","created_date"
 ```
 A good `split-by` column will be indexed and ideally will have close to uniform distribution
 of data between it's `min` and `max` values
@@ -30,8 +29,6 @@ of data between it's `min` and `max` values
 
 ```shell script
 spark-submit --num-executors 15 --executor-cores 4 /
---conf spark.databricks.delta.optimizeWrite.enabled=true /
---conf spark.databricks.delta.autoCompact.enabled=true /
 --class "io.delta.connectors.spark.jdbc.ImportRunner" sql-delta-import.jar /
 --jdbc-url jdbc:mysql://hostName:port/database /
 --source source.table

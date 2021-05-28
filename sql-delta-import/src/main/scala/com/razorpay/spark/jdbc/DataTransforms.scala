@@ -46,10 +46,9 @@ object DataTransforms extends App {
               .cast(Constants.COLUMN_DATATYPE_MAPPING.getOrElse(x._2, Constants.STRING))
           )
       } else {
-        println(s"`${x._1}` column does not exist in the table, skipping")
+        logger.error(s"`${x._1}` column does not exist in the table, skipping")
       }
     })
-
     castedDf
   }
 
