@@ -15,13 +15,13 @@
  */
 
 
-resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
-
-resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
-
-resolvers += Resolver.url(
-  "typesafe sbt-plugins",
-  url("https://dl.bintray.com/typesafe/sbt-plugins"))(Resolver.ivyStylePatterns)
+//resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
+//
+//resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
+//
+//resolvers += Resolver.url(
+//  "typesafe sbt-plugins",
+//  url("https://dl.bintray.com/typesafe/sbt-plugins"))(Resolver.ivyStylePatterns)
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
