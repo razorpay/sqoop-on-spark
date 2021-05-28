@@ -24,9 +24,6 @@ lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 lazy val testScalastyle = taskKey[Unit]("testScalastyle")
 
 val sparkVersion = "3.0.0"
-val hadoopVersion = "2.7.2"
-val hiveVersion = "2.3.7"
-val deltaVersion = "0.5.0"
 
 lazy val commonSettings = Seq(
   organization := "io.delta",
@@ -51,77 +48,6 @@ lazy val commonSettings = Seq(
   test in assembly := {}
 )
 
-lazy val releaseSettings = Seq(
-  publishMavenStyle := true,
-  releaseCrossBuild := true,
-  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
-  pomExtra :=
-    <url>https://github.com/delta-io/connectors</url>
-      <scm>
-        <url>git@github.com:delta-io/connectors.git</url>
-        <connection>scm:git:git@github.com:delta-io/connectors.git</connection>
-      </scm>
-      <developers>
-        <developer>
-          <id>tdas</id>
-          <name>Tathagata Das</name>
-          <url>https://github.com/tdas</url>
-        </developer>
-        <developer>
-          <id>scottsand-db</id>
-          <name>Scott Sandre</name>
-          <url>https://github.com/scottsand-db</url>
-        </developer>
-        <developer>
-          <id>windpiger</id>
-          <name>Jun Song</name>
-          <url>https://github.com/windpiger</url>
-        </developer>
-        <developer>
-          <id>zsxwing</id>
-          <name>Shixiong Zhu</name>
-          <url>https://github.com/zsxwing</url>
-        </developer>
-      </developers>,
-  bintrayOrganization := Some("delta-io"),
-  bintrayRepository := "delta",
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runTest,
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    publishArtifacts,
-    setNextVersion,
-    commitNextVersion
-  )
-)
-
-lazy val skipReleaseSettings = Seq(
-  publishArtifact := false,
-  publish := ()
-)
-
-// Don't release the root project
-publishArtifact := false
-
-publish := ()
-
-// Looks some of release settings should be set for the root project as well.
-releaseCrossBuild := true
-
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  publishArtifacts,
-  setNextVersion,
-  commitNextVersion
-)
 
 lazy val sqlDeltaImport = (project in file("sql-delta-import"))
   .settings (
@@ -142,4 +68,3 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
       "com.databricks" %% "dbutils-api" % "0.0.5"
     )
   )
-  .settings(releaseSettings)
