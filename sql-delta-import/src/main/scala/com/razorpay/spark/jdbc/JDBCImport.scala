@@ -85,6 +85,10 @@ class JDBCImport(
     properties.put("user", jdbcUsername)
     properties.put("password", jdbcPassword)
 
+    if (dbType == "mysql") {
+      properties.put("tinyInt1isBit", "false")
+    }
+
     m.foreach(pair => properties.put(pair._1, pair._2))
     properties
   }
