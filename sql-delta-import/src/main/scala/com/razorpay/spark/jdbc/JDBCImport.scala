@@ -43,6 +43,7 @@ case class ImportConfig(
     database: String,
     mapColumns: Option[String]
 ) {
+
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
 
   val boundsSql: String = boundaryQuery.getOrElse(
