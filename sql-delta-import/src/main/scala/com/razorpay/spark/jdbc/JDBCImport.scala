@@ -88,6 +88,7 @@ class JDBCImport(
 
     if (dbType == "mysql") {
       properties.put("tinyInt1isBit", "false")
+      properties.put("useSSL", "false")
     }
 
     m.foreach(pair => properties.put(pair._1, pair._2))
