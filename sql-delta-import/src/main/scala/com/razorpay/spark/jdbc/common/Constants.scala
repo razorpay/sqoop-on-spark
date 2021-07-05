@@ -3,6 +3,8 @@ package com.razorpay.spark.jdbc.common
 object Constants {
   final val SCOPE = "spark_sqoop"
 
+  final val HUDI_DB_PREFIX = "realtime_"
+
   final val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
   final val POSTGRESQL_DRIVER = "org.postgresql.Driver"
 
