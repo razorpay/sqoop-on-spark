@@ -1,0 +1,15 @@
+include "include.conf"
+
+{% if env == 'stage' %}
+app {
+  env = "stage"
+  s3_bucket = "rzp-edh-dev"
+}
+
+{% else %}
+app {
+  env = "prod"
+  s3_bucket = "rzp-edh-prod"
+}
+
+{% endif %}
