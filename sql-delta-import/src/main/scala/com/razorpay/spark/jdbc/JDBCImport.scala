@@ -18,6 +18,8 @@ package com.razorpay.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import com.razorpay.spark.jdbc.common.Constants
+import com.razorpay.spark.jdbc.config.ConfigLoader
+import com.typesafe.config.Config
 import org.apache.spark.sql.functions.{col, from_unixtime, lit}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
@@ -67,6 +69,7 @@ class JDBCImport(
     jdbcParams: Map[String, String] = Map()
 )(implicit val spark: SparkSession) {
 
+  val appConf: Config = ConfigLoader.load()
   import spark.implicits._
 
   implicit def mapToProperties(m: Map[String, String]): Properties = {
@@ -141,15 +144,65 @@ class JDBCImport(
     }
   }
 
-  private implicit class DataFrameExtensionOps(df: DataFrame) {
+  def resolveColumnDataType(dataType: String): String = {
+    if (dataType.contains(Constants.DECIMAL_TYPE)) {
+      dataType.replace(Constants.DECIMAL_TYPE, "decimal")
+    } else {
+      Constants.dataTypeMapping.getOrElse(dataType, Constants.STRING)
+    }
+  }
 
-    def writeToParquet(outputTable: String): Unit = {
-      df.write
-        .mode(SaveMode.Overwrite)
-        .saveAsTable(outputTable)
+  def createHiveTable(df: DataFrame, s3Path: String, outputTable: String): Unit = {
+    val partitionColumn = importConfig.partitionBy
+
+    val columnList = if (partitionColumn.isDefined) { df.drop(partitionColumn.get).dtypes }
+    else { df.dtypes }
+
+    val columnListResolved = columnList.map(x => {
+      val dataType = resolveColumnDataType(x._2)
+
+      s"`${x._1}` $dataType"
+    })
+
+    val schema = columnListResolved.mkString(",")
+
+    val dropTableQuery = s"drop table if exists $outputTable"
+
+    var createTableQuery =
+      s"CREATE EXTERNAL TABLE $outputTable ($schema) " +
+      s"ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe' " +
+      s"STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' " +
+      s"OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat' " +
+      s"LOCATION '$s3Path'"
+
+    if (partitionColumn.isDefined) {
+      val partitionColumnDataType = resolveColumnDataType(
+        df.select(partitionColumn.get).dtypes(0)._2
+      )
+      createTableQuery =
+        createTableQuery + s" PARTITIONED BY (`${partitionColumn.get}` $partitionColumnDataType)"
     }
 
-    def writeAsPartitioned(outputTable: String, partitionColumn: String): Unit = {
+    spark.sql(dropTableQuery)
+    spark.sql(createTableQuery)
+
+    if (partitionColumn.isDefined) {
+      val msckRepairQuery = s"msck repair table $outputTable"
+      spark.sql(msckRepairQuery)
+    }
+  }
+
+  private implicit class DataFrameExtensionOps(df: DataFrame) {
+
+    def writeToParquet(s3Path: String): DataFrame = {
+      df.write
+        .mode(SaveMode.Overwrite)
+        .parquet(s3Path)
+
+      df
+    }
+
+    def writeAsPartitioned(s3Path: String, partitionColumn: String): DataFrame = {
       val partitionedDf = partitionColumn match {
         case Constants.CREATED_DATE =>
           if (
@@ -167,7 +220,9 @@ class JDBCImport(
       partitionedDf.write
         .mode(SaveMode.Overwrite)
         .partitionBy(partitionColumn)
-        .saveAsTable(outputTable)
+        .parquet(s3Path)
+
+      partitionedDf
     }
   }
 
@@ -179,10 +234,17 @@ class JDBCImport(
       DataTransforms.castColumns(sourceDataframe, importConfig.mapColumns.get)
     } else { sourceDataframe }
 
-    importConfig.partitionBy match {
-      case None                  => df.writeToParquet(importConfig.outputTable)
-      case Some(partitionColumn) => df.writeAsPartitioned(importConfig.outputTable, partitionColumn)
+    val s3Bucket = appConf.getString("app.s3_bucket")
+    val dbtable = importConfig.outputTable.split("\\.")
+
+    val s3Path = s"s3a://$s3Bucket/sqoop/${dbtable(0)}/${dbtable(1)}"
+
+    val finalDf = importConfig.partitionBy match {
+      case None                  => df.writeToParquet(s3Path)
+      case Some(partitionColumn) => df.writeAsPartitioned(s3Path, partitionColumn)
     }
+
+    createHiveTable(finalDf, s3Path, importConfig.outputTable)
   }
 }
 

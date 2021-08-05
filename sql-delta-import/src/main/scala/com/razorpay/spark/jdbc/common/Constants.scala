@@ -15,4 +15,15 @@ object Constants {
   )
 
   final val STRING = "string"
+  final val DECIMAL_TYPE = "DecimalType"
+
+  val dataTypeMapping = Map(
+      "StringType"  -> "string",
+      "LongType"    -> "bigint",
+      "IntegerType" -> "bigint",
+      "ShortType"   -> "smallint",
+      "ByteType"    -> "tinyint",
+      "DoubleType"  -> "double",
+      "BooleanType" -> "boolean"
+    )
 }
