@@ -14,11 +14,6 @@ RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.
     apt-get update && \
     apt-get -y install awscli
 
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py && \
-    python get-pip.py && \
-    pip install --no-cache-dir "razorpay.alohomora==0.4.5" && \
-    rm -rf ~/.cache/pip/*
-
 RUN sbt clean assembly && \
     chmod +x /app/sql-delta-import/dockerconf/entrypoint.sh
 

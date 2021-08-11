@@ -65,7 +65,6 @@ lazy val sqlDeltaImport = (project in file("sql-delta-import"))
       "org.apache.spark" % "spark-sql_2.12" % sparkVersion % "test",
       "mysql" % "mysql-connector-java" % "8.0.25",
       "org.postgresql" % "postgresql" % "42.2.20",
-      "com.databricks" %% "dbutils-api" % "0.0.5",
-      "com.typesafe" % "config" % "1.3.2"
+      "com.databricks" %% "dbutils-api" % "0.0.5"
     )
   )
