@@ -16,7 +16,6 @@
 
 package com.razorpay.spark.jdbc
 
-import com.razorpay.spark.jdbc.config.ConfigLoader
 import org.apache.spark.sql.SparkSession
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
@@ -26,11 +25,10 @@ import org.rogach.scallop.{ScallopConf, ScallopOption}
 object ImportRunner extends App {
 
   val config = new ImportRunnerConfig(args)
-  val appConf = ConfigLoader.load()
 
   implicit val spark: SparkSession = SparkSession
     .builder()
-    .appName(appConf.getString("app.name"))
+    .appName("sqoop-on-spark")
     .getOrCreate()
 
   val importConfig = ImportConfig(

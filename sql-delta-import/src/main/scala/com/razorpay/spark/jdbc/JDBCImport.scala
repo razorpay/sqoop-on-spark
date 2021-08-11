@@ -18,8 +18,6 @@ package com.razorpay.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import com.razorpay.spark.jdbc.common.Constants
-import com.razorpay.spark.jdbc.config.ConfigLoader
-import com.typesafe.config.Config
 import org.apache.spark.sql.functions.{col, from_unixtime, lit}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
@@ -69,7 +67,6 @@ class JDBCImport(
     jdbcParams: Map[String, String] = Map()
 )(implicit val spark: SparkSession) {
 
-  val appConf: Config = ConfigLoader.load()
   import spark.implicits._
 
   implicit def mapToProperties(m: Map[String, String]): Properties = {
@@ -234,7 +231,7 @@ class JDBCImport(
       DataTransforms.castColumns(sourceDataframe, importConfig.mapColumns.get)
     } else { sourceDataframe }
 
-    val s3Bucket = appConf.getString("app.s3_bucket")
+    val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
     val dbtable = importConfig.outputTable.split("\\.")
 
     val s3Path = s"s3a://$s3Bucket/sqoop/${dbtable(0)}/${dbtable(1)}"
