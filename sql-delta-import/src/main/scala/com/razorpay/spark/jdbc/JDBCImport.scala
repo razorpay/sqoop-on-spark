@@ -224,7 +224,7 @@ class JDBCImport(
   }
 
   /**
-   * Runs transform against dataframe read from jdbc and writes it to Delta table
+   * Runs transform against dataframe read from jdbc and writes it to s3
    */
   def run(): Unit = {
     val df = if (importConfig.mapColumns.nonEmpty) {
@@ -233,6 +233,11 @@ class JDBCImport(
 
     val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
     val dbtable = importConfig.outputTable.split("\\.")
+
+    assert(
+      dbtable.size == 2 && dbtable.forall(_.trim.nonEmpty),
+      "Please provide the output-table in the format {DB_NAME}.{TABLE_NAME}"
+    )
 
     val s3Path = s"s3a://$s3Bucket/sqoop/${dbtable(0)}/${dbtable(1)}"
 
