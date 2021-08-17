@@ -6,6 +6,9 @@ object Constants {
   final val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
   final val POSTGRESQL_DRIVER = "org.postgresql.Driver"
 
+  final val MYSQL = "mysql"
+  final val POSTGRESQL = "postgresql"
+
   // seconds
   final val QUERY_TIMEOUT = 10800
 

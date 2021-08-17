@@ -32,6 +32,7 @@ object ImportRunner extends App {
     .getOrCreate()
 
   val importConfig = ImportConfig(
+    config.scope(),
     config.inputTable(),
     config.query.toOption,
     config.boundaryQuery.toOption,

@@ -33,6 +33,7 @@ import java.util.Properties
  * @param chunks      - to how many chunks split jdbc source data
  */
 case class ImportConfig(
+    scope: String,
     inputTable: String,
     query: Option[String],
     boundaryQuery: Option[String],
@@ -46,11 +47,21 @@ case class ImportConfig(
 
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
 
+  val dbType: String = dbutils.secrets.get(scope = scope, key = "DB_TYPE")
+
+  val escapeCharacter = if (dbType == Constants.MYSQL) {
+    "`"
+  } else if (dbType == Constants.POSTGRESQL) {
+    """""""
+  }
+
+  val inputTableEscaped: String = escapeCharacter + inputTable + escapeCharacter
+
   val boundsSql: String = boundaryQuery.getOrElse(
-    s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTable) as bounds"
+    s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTableEscaped) as bounds"
   )
 
-  val jdbcQuery: String = query.getOrElse(inputTable)
+  val jdbcQuery: String = query.getOrElse(inputTableEscaped)
 }
 
 /**
@@ -76,9 +87,9 @@ class JDBCImport(
 
     val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
 
-    if (dbType == "mysql") {
+    if (dbType == Constants.MYSQL) {
       properties.setProperty("driver", Constants.MYSQL_DRIVER)
-    } else if (dbType == "postgresql") {
+    } else if (dbType == Constants.POSTGRESQL) {
       properties.setProperty("driver", Constants.POSTGRESQL_DRIVER)
     }
 
