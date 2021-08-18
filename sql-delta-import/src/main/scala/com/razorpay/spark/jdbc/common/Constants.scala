@@ -23,12 +23,13 @@ object Constants {
   final val DECIMAL_TYPE = "DecimalType"
 
   val dataTypeMapping = Map(
-      "StringType"  -> "string",
-      "LongType"    -> "bigint",
-      "IntegerType" -> "bigint",
-      "ShortType"   -> "smallint",
-      "ByteType"    -> "tinyint",
-      "DoubleType"  -> "double",
-      "BooleanType" -> "boolean"
-    )
+    "StringType"    -> "string",
+    "LongType"      -> "bigint",
+    "IntegerType"   -> "bigint",
+    "ShortType"     -> "smallint",
+    "ByteType"      -> "tinyint",
+    "DoubleType"    -> "double",
+    "BooleanType"   -> "boolean",
+    "TimestampType" -> "timestamp"
+  )
 }
