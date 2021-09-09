@@ -112,6 +112,8 @@ class JDBCImport(
     if (dbType == "mysql") {
       properties.put("tinyInt1isBit", "false")
       properties.put("useSSL", "false")
+      // https://www.taogenjia.com/2021/05/26/JDBC-Error-Java-sql-SQLException-Zero-Date-value-Prohibited/
+      properties.put("zeroDateTimeBehavior", "convertToNull")
     }
 
     m.foreach(pair => properties.put(pair._1, pair._2))
