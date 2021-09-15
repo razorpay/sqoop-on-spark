@@ -42,7 +42,8 @@ case class ImportConfig(
     chunks: Int,
     partitionBy: Option[String],
     database: String,
-    mapColumns: Option[String]
+    mapColumns: Option[String],
+    maxExecTimeout: Option[Long]
 ) {
 
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
@@ -127,7 +128,16 @@ class JDBCImport(
 
     val database = importConfig.database
 
-    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
+    val urlAdditionalArgs = if (dbType == Constants.MYSQL) {
+      if (importConfig.maxExecTimeout.isDefined) {
+        s"?sessionVariables=MAX_EXECUTION_TIME=${importConfig.maxExecTimeout.get}"
+      } else {
+        ""
+      }
+    } else {
+      ""
+    }
+    val connectionUrl = s"jdbc:$dbType://$host:$port/$database" + urlAdditionalArgs
 
     connectionUrl
   }
