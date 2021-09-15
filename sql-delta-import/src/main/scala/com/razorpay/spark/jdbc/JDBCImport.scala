@@ -43,7 +43,7 @@ case class ImportConfig(
     partitionBy: Option[String],
     database: String,
     mapColumns: Option[String],
-    maxExecTimeout: Option[Long]
+    maxExecTimeout: Long
 ) {
 
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
@@ -115,10 +115,7 @@ class JDBCImport(
       properties.put("useSSL", "false")
       // https://www.taogenjia.com/2021/05/26/JDBC-Error-Java-sql-SQLException-Zero-Date-value-Prohibited/
       properties.put("zeroDateTimeBehavior", "convertToNull")
-      if (importConfig.maxExecTimeout.isDefined) {
-        properties.put("sessionVariables", s"MAX_EXECUTION_TIME=${importConfig.maxExecTimeout.get}")
-      }
-
+      properties.put("sessionVariables", s"MAX_EXECUTION_TIME=${importConfig.maxExecTimeout}")
     }
 
     m.foreach(pair => properties.put(pair._1, pair._2))

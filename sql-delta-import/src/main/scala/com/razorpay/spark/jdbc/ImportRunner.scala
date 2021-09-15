@@ -18,6 +18,7 @@ package com.razorpay.spark.jdbc
 
 import org.apache.spark.sql.SparkSession
 import org.rogach.scallop.{ScallopConf, ScallopOption}
+import com.razorpay.spark.jdbc.common.Constants
 
 /**
  * Spark app that wraps functionality of JDBCImport and exposes configuration as command line args
@@ -42,7 +43,7 @@ object ImportRunner extends App {
     config.partitionBy.toOption,
     config.database(),
     config.mapColumns.toOption,
-    config.maxExecTimeout.toOption
+    config.maxExecTimeout()
   )
 
   JDBCImport(
@@ -65,7 +66,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val chunks: ScallopOption[Int] = opt[Int](default = Some(1))
   val partitionBy: ScallopOption[String] = opt[String](required = false)
   val mapColumns: ScallopOption[String] = opt[String](required = false)
-  val maxExecTimeout: ScallopOption[Long] = opt[Long](default = Some(3600000L))
+  val maxExecTimeout: ScallopOption[Long] = opt[Long](default = Some(Constants.QUERY_TIMEOUT * 1000L))
 
   verify()
 }
