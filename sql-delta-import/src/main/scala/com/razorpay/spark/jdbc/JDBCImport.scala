@@ -115,6 +115,10 @@ class JDBCImport(
       properties.put("useSSL", "false")
       // https://www.taogenjia.com/2021/05/26/JDBC-Error-Java-sql-SQLException-Zero-Date-value-Prohibited/
       properties.put("zeroDateTimeBehavior", "convertToNull")
+      if (importConfig.maxExecTimeout.isDefined) {
+        properties.put("sessionVariables", s"MAX_EXECUTION_TIME=${importConfig.maxExecTimeout.get}")
+      }
+
     }
 
     m.foreach(pair => properties.put(pair._1, pair._2))
@@ -128,16 +132,7 @@ class JDBCImport(
 
     val database = importConfig.database
 
-    val urlAdditionalArgs = if (dbType == Constants.MYSQL) {
-      if (importConfig.maxExecTimeout.isDefined) {
-        s"?sessionVariables=MAX_EXECUTION_TIME=${importConfig.maxExecTimeout.get}"
-      } else {
-        ""
-      }
-    } else {
-      ""
-    }
-    val connectionUrl = s"jdbc:$dbType://$host:$port/$database" + urlAdditionalArgs
+    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
 
     connectionUrl
   }
