@@ -18,7 +18,7 @@ package com.razorpay.spark.jdbc
 
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import com.razorpay.spark.jdbc.common.Constants
-import org.apache.spark.sql.functions.{col, from_unixtime, lit}
+import org.apache.spark.sql.functions.{col, from_unixtime, lit, substring}
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
@@ -235,7 +235,10 @@ class JDBCImport(
           ) {
             df.withColumn(
               partitionColumn,
-              from_unixtime(col(Constants.CREATED_AT).cast(IntegerType) + lit(19800), "yyyy-MM-dd")
+              from_unixtime(
+                substring(col(Constants.CREATED_AT), 1, 10).cast(IntegerType) + lit(19800),
+                "yyyy-MM-dd"
+              )
             )
           } else { df }
         case _ => df
