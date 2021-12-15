@@ -164,7 +164,7 @@ class JDBCImport(
         )
         .where(s"${importConfig.splitColumn} >= $lower and ${importConfig.splitColumn} <= $upper")
     } else {
-      spark.read.jdbc(buildJdbcUrl, importConfig.inputTable, jdbcParams)
+      spark.read.jdbc(buildJdbcUrl, importConfig.jdbcQuery, jdbcParams)
     }
   }
 
