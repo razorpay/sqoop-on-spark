@@ -81,8 +81,7 @@ class JDBCImport(
 
   import spark.implicits._
 
-  def createDbIfNotExists(): Unit = {
-    val outputDbName = importConfig.outputTable.split("\\.")(0)
+  def createDbIfNotExists(outputDbName: String): Unit = {
     val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
     val baseS3Path = s"s3a://$s3Bucket/sqoop"
 
@@ -264,19 +263,22 @@ class JDBCImport(
     val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
     val dbtable = importConfig.outputTable.split("\\.")
 
+    val dbName = dbtable(0).trim
+    val tableName = dbtable(1).trim
+
     assert(
       dbtable.size == 2 && dbtable.forall(_.trim.nonEmpty),
       "Please provide the output-table in the format {DB_NAME}.{TABLE_NAME}"
     )
 
     assert(
-      !dbtable.startsWith(Constants.HUDI_DB_PREFIX),
+      !dbName.startsWith(Constants.HUDI_DB_PREFIX),
       "Output database name provided is invalid. Please try again"
     )
 
-    val s3Path = s"s3a://$s3Bucket/sqoop/${dbtable(0)}/${dbtable(1)}"
+    val s3Path = s"s3a://$s3Bucket/sqoop/$dbName/$tableName"
 
-    createDbIfNotExists()
+    createDbIfNotExists(dbName)
 
     val finalDf = importConfig.partitionBy match {
       case None                  => df.writeToParquet(s3Path)
