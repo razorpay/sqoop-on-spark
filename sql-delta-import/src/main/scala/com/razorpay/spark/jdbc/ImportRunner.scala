@@ -43,7 +43,8 @@ object ImportRunner extends App {
     config.partitionBy.toOption,
     config.database(),
     config.mapColumns.toOption,
-    config.maxExecTimeout()
+    config.maxExecTimeout(),
+    config.schema.toOption
   )
 
   JDBCImport(
@@ -67,6 +68,7 @@ class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) 
   val partitionBy: ScallopOption[String] = opt[String](required = false)
   val mapColumns: ScallopOption[String] = opt[String](required = false)
   val maxExecTimeout: ScallopOption[Long] = opt[Long](default = Some(Constants.QUERY_TIMEOUT * 1000L))
+  val schema: ScallopOption[String] = opt[String](required = false)
 
   verify()
 }

@@ -43,7 +43,8 @@ case class ImportConfig(
     partitionBy: Option[String],
     database: String,
     mapColumns: Option[String],
-    maxExecTimeout: Long
+    maxExecTimeout: Long,
+    schema: Option[String]
 ) {
 
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
@@ -128,8 +129,13 @@ class JDBCImport(
     val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
 
     val database = importConfig.database
+    val schema = importConfig.schema
 
-    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
+    var connectionUrl = s"jdbc:$dbType://$host:$port/$database"
+
+    if (dbType == Constants.POSTGRESQL && schema.isDefined){
+      connectionUrl = s"jdbc:$dbType://$host:$port/$database?currentSchema=${schema.get}"
+    }
 
     connectionUrl
   }
