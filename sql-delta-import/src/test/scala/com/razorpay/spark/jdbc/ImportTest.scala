@@ -90,7 +90,8 @@ class ImportTest extends AnyFunSuite with BeforeAndAfterAll {
         chunks = chunks,
         partitionBy = None,
         database = "test",
-        mapColumns = None
+        mapColumns = None,
+        schema = Some("public")
       )
     ).run()
 
