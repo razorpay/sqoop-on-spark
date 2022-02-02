@@ -18,7 +18,8 @@ object Constants {
   final val CREATED_AT = "created_at"
 
   final val COLUMN_DATATYPE_MAPPING = Map(
-    "bigint" -> "long"
+    "bigint" -> "long",
+    "boolean" -> "boolean"
   )
 
   final val STRING = "string"
