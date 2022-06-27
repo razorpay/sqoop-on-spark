@@ -19,7 +19,7 @@ package com.razorpay.spark.jdbc
 import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import com.razorpay.spark.jdbc.common.Constants
 import org.apache.spark.sql.functions.{col, from_unixtime, lit, substring}
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.{IntegerType, LongType}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import java.util.Properties
@@ -239,13 +239,24 @@ class JDBCImport(
             df.columns
               .contains(Constants.CREATED_AT) && !df.columns.contains(Constants.CREATED_DATE)
           ) {
-            df.withColumn(
-              partitionColumn,
-              from_unixtime(
-                substring(col(Constants.CREATED_AT), 1, 10).cast(IntegerType) + lit(19800),
-                "yyyy-MM-dd"
+            if (List(IntegerType, LongType).contains(df.schema(Constants.CREATED_AT).dataType)){
+//              This means that created_at stores epoch timestamp in either seconds or milliseconds.
+              df.withColumn(
+                partitionColumn,
+                from_unixtime(
+                  substring(col(Constants.CREATED_AT), 1, 10).cast(IntegerType) + lit(19800),
+                  "yyyy-MM-dd"
+                )
               )
-            )
+            } else {
+//              This means that created_at stores data types in YYYY-MM-DD HH:MM:SS format.
+//              We dont want to add 19800 seconds here since it is also not added in the
+//              entity processor for such datatypes.
+              df.withColumn(
+                partitionColumn,
+                  substring(col(Constants.CREATED_AT), 1, 10)
+              )
+            }
           } else { df }
         case _ => df
       }
