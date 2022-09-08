@@ -168,7 +168,7 @@ class JDBCImport(
         .option("numPartitions",importConfig.chunks)
         .options(jdbcParams)
         .load()
-        .where(s"${splitColumn} >= '$lower' and ${splitColumn} <= '$upper'")
+        .where(s"${importConfig.splitColumn} >= '$lower' and ${importConfig.splitColumn} <= '$upper'")
 
 
     } else {
