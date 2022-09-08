@@ -150,25 +150,27 @@ class JDBCImport(
   private def readJDBCSourceInParallel(): DataFrame = {
 
     if (importConfig.splitBy.nonEmpty) {
+      val defaultString="defaultValue"
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
-        .selectExpr("cast(min as long) min", "max")
-        .as[(Option[Long], Option[Long])]
+        .selectExpr("cast(min as string) min", "cast(max as string) max")
+        .as[(Option[String], Option[String])]
         .take(1)
-        .map { case (a, b) => (a.getOrElse(0L), b.getOrElse(0L)) }
+        .map { case (a, b) => (a.getOrElse(defaultString), b.getOrElse(defaultString)) }
         .head
 
-      spark.read
-        .jdbc(
-          buildJdbcUrl,
-          importConfig.jdbcQuery,
-          importConfig.splitColumn,
-          lower,
-          upper,
-          importConfig.chunks,
-          jdbcParams
-        )
-        .where(s"${importConfig.splitColumn} >= $lower and ${importConfig.splitColumn} <= $upper")
+      spark.read.format("jdbc")
+        .option("url",buildJdbcUrl)
+        .option("dbtable",importConfig.jdbcQuery)
+        .option("partitionColumn",importConfig.splitColumn)
+        .option("lowerBound",lower)
+        .option("upperBound",upper)
+        .option("numPartitions",importConfig.chunks)
+        .options(jdbcParams)
+        .load()
+        .where(s"${splitColumn} >= '$lower' and ${splitColumn} <= '$upper'")
+
+
     } else {
       spark.read.jdbc(buildJdbcUrl, importConfig.jdbcQuery, jdbcParams)
     }
