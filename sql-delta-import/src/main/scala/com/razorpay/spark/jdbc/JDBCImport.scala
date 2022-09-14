@@ -159,10 +159,14 @@ class JDBCImport(
         .map { case (a, b) => (a.getOrElse(defaultString), b.getOrElse(defaultString)) }
         .head
 
+      val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
+      val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
 
       spark.read.format("jdbc")
         .option("url",buildJdbcUrl)
         .option("dbtable",importConfig.jdbcQuery)
+        .option("user",jdbcUsername)
+        .option("password",jdbcPassword)
         .option("partitionColumn",importConfig.splitColumn)
         .option("lowerBound",lower)
         .option("upperBound",upper)
