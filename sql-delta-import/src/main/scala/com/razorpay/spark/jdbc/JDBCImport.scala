@@ -159,9 +159,6 @@ class JDBCImport(
         .map { case (a, b) => (a.getOrElse(defaultString), b.getOrElse(defaultString)) }
         .head
 
-      import scala.jdk.CollectionConverters._
-      val jdbcParamsMap=jdbcParams.asScala
-      
       spark.read.format("jdbc")
         .option("url",buildJdbcUrl)
         .option("dbtable",importConfig.jdbcQuery)
@@ -169,7 +166,7 @@ class JDBCImport(
         .option("lowerBound",lower)
         .option("upperBound",upper)
         .option("numPartitions",importConfig.chunks)
-        .options(jdbcParamsMap)
+        .options(jdbcParams)
         .load()
         .where(s"${importConfig.splitColumn} >= '$lower' and ${importConfig.splitColumn} <= '$upper'")
 
