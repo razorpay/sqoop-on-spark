@@ -150,7 +150,7 @@ class JDBCImport(
   private def readJDBCSourceInParallel(): DataFrame = {
 
     if (importConfig.splitBy.nonEmpty) {
-      val defaultString=""
+      val defaultString="0"
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
         .selectExpr("cast(min as string) min", "cast(max as string) max")
