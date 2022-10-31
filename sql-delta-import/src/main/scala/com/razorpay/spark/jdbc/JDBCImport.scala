@@ -43,6 +43,7 @@ case class ImportConfig(
     partitionBy: Option[String],
     database: String,
     mapColumns: Option[String],
+    s3Bucket: Option[String],
     maxExecTimeout: Long,
     schema: Option[String]
 ) {
@@ -132,7 +133,7 @@ class JDBCImport(
 
     var connectionUrl = s"jdbc:$dbType://$host:$port/$database"
 
-    if (dbType == Constants.POSTGRESQL && schema.isDefined){
+    if (dbType == Constants.POSTGRESQL && schema.isDefined) {
       connectionUrl = s"jdbc:$dbType://$host:$port/$database?currentSchema=${schema.get}"
     }
 
@@ -149,7 +150,7 @@ class JDBCImport(
   private def readJDBCSourceInParallel(): DataFrame = {
 
     if (importConfig.splitBy.nonEmpty) {
-      val defaultString="0"
+      val defaultString = "0"
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
         .selectExpr("cast(min as string) min", "cast(max as string) max")
@@ -161,18 +162,20 @@ class JDBCImport(
       val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
       val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
 
-      spark.read.format("jdbc")
-        .option("url",buildJdbcUrl)
-        .option("dbtable",importConfig.jdbcQuery)
-        .option("user",jdbcUsername)
-        .option("password",jdbcPassword)
-        .option("partitionColumn",importConfig.splitColumn)
-        .option("lowerBound",lower)
-        .option("upperBound",upper)
-        .option("numPartitions",importConfig.chunks)
+      spark.read
+        .format("jdbc")
+        .option("url", buildJdbcUrl)
+        .option("dbtable", importConfig.jdbcQuery)
+        .option("user", jdbcUsername)
+        .option("password", jdbcPassword)
+        .option("partitionColumn", importConfig.splitColumn)
+        .option("lowerBound", lower)
+        .option("upperBound", upper)
+        .option("numPartitions", importConfig.chunks)
         .load()
-        .where(s"${importConfig.splitColumn} >= '$lower' and ${importConfig.splitColumn} <= '$upper'")
-
+        .where(
+          s"${importConfig.splitColumn} >= '$lower' and ${importConfig.splitColumn} <= '$upper'"
+        )
 
     } else {
       spark.read.jdbc(buildJdbcUrl, importConfig.jdbcQuery, jdbcParams)
@@ -244,8 +247,8 @@ class JDBCImport(
             df.columns
               .contains(Constants.CREATED_AT) && !df.columns.contains(Constants.CREATED_DATE)
           ) {
-            if (List(IntegerType, LongType).contains(df.schema(Constants.CREATED_AT).dataType)){
-//              This means that created_at stores epoch timestamp in either seconds or milliseconds.
+            if (List(IntegerType, LongType).contains(df.schema(Constants.CREATED_AT).dataType)) {
+              // This means created_at stores epoch timestamp in either seconds or milliseconds.
               df.withColumn(
                 partitionColumn,
                 from_unixtime(
@@ -254,12 +257,12 @@ class JDBCImport(
                 )
               )
             } else {
-//              This means that created_at stores data types in YYYY-MM-DD HH:MM:SS format.
-//              We dont want to add 19800 seconds here since it is also not added in the
-//              entity processor for such datatypes.
+              // This means that created_at stores data types in YYYY-MM-DD HH:MM:SS format.
+              // We dont want to add 19800 seconds here since it is also not added in the
+              // entity processor for such datatypes.
               df.withColumn(
                 partitionColumn,
-                  substring(col(Constants.CREATED_AT), 1, 10)
+                substring(col(Constants.CREATED_AT), 1, 10)
               )
             }
           } else { df }
@@ -283,7 +286,11 @@ class JDBCImport(
       DataTransforms.castColumns(sourceDataframe, importConfig.mapColumns.get)
     } else { sourceDataframe }
 
-    val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
+    val s3BucketConf = importConfig.s3Bucket
+
+    val s3Bucket = if (s3BucketConf.isDefined) { s3BucketConf.get }
+    else { dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET") }
+
     val dbtable = importConfig.outputTable.split("\\.")
 
     val dbName = dbtable(0).trim
@@ -301,14 +308,16 @@ class JDBCImport(
 
     val s3Path = s"s3a://$s3Bucket/sqoop/$dbName/$tableName"
 
-    createDbIfNotExists(dbName)
-
     val finalDf = importConfig.partitionBy match {
       case None                  => df.writeToParquet(s3Path)
       case Some(partitionColumn) => df.writeAsPartitioned(s3Path, partitionColumn)
     }
 
-    createHiveTable(finalDf, s3Path, importConfig.outputTable)
+    if (s3BucketConf.isEmpty) {
+      createDbIfNotExists(dbName)
+
+      createHiveTable(finalDf, s3Path, importConfig.outputTable)
+    }
   }
 }
 
