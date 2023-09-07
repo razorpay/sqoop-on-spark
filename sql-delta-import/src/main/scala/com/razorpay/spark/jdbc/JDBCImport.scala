@@ -162,6 +162,8 @@ class JDBCImport(
       val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
       val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
 
+      System.out.println(s"Query is - ${importConfig.jdbcQuery}")
+
       spark.read
         .format("jdbc")
         .option("url", buildJdbcUrl)
