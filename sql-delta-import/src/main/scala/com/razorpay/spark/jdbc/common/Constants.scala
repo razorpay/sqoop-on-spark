@@ -1,8 +1,6 @@
 package com.razorpay.spark.jdbc.common
 
 object Constants {
-  final val SCOPE = "spark_sqoop"
-
   final val HUDI_DB_PREFIX = "realtime_"
 
   final val MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver"
@@ -13,6 +11,8 @@ object Constants {
 
   // seconds
   final val QUERY_TIMEOUT = 10800
+
+  final val CREDSTASH_TABLE_NAME = "credstash-prod-emr-sqoop"
 
   final val CREATED_DATE = "created_date"
   final val CREATED_AT = "created_at"

@@ -16,12 +16,11 @@
 
 package com.razorpay.spark.jdbc
 
-import com.databricks.dbutils_v1.DBUtilsHolder.dbutils
 import com.razorpay.spark.jdbc.common.Constants
 import org.apache.spark.sql.functions.{col, from_unixtime, lit, substring}
 import org.apache.spark.sql.types.{IntegerType, LongType}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-
+import scala.sys.process._
 import java.util.Properties
 
 /**
@@ -50,7 +49,7 @@ case class ImportConfig(
 
   val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
 
-  val dbType: String = dbutils.secrets.get(scope = scope, key = "DB_TYPE")
+  val dbType: String = Credentials.getSecretValue(s"${scope}_DB_TYPE")
 
   val escapeCharacter = if (dbType == Constants.MYSQL) {
     "`"
@@ -84,7 +83,7 @@ class JDBCImport(
   import spark.implicits._
 
   def createDbIfNotExists(outputDbName: String): Unit = {
-    val s3Bucket = dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET")
+    val s3Bucket = Credentials.getSecretValue("SQOOP_S3_BUCKET")
     val baseS3Path = s"s3a://$s3Bucket/sqoop"
 
     if (!spark.catalog.databaseExists(outputDbName)) {
@@ -96,10 +95,10 @@ class JDBCImport(
 
   implicit def mapToProperties(m: Map[String, String]): Properties = {
     val properties = new Properties()
-    val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
-    val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
 
-    val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
+    val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
+    val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
+    val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
 
     if (dbType == Constants.MYSQL) {
       properties.setProperty("driver", Constants.MYSQL_DRIVER)
@@ -124,9 +123,9 @@ class JDBCImport(
   }
 
   def buildJdbcUrl: String = {
-    val host = dbutils.secrets.get(scope = databricksScope, key = "DB_HOST")
-    val port = dbutils.secrets.get(scope = databricksScope, key = "DB_PORT")
-    val dbType = dbutils.secrets.get(scope = databricksScope, key = "DB_TYPE")
+    val host = Credentials.getSecretValue(s"${databricksScope}_DB_HOST")
+    val port = Credentials.getSecretValue(s"${databricksScope}_DB_PORT")
+    val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
 
     val database = importConfig.database
     val schema = importConfig.schema
@@ -159,8 +158,8 @@ class JDBCImport(
         .map { case (a, b) => (a.getOrElse(defaultString), b.getOrElse(defaultString)) }
         .head
 
-      val jdbcUsername = dbutils.secrets.get(scope = databricksScope, key = "DB_USERNAME")
-      val jdbcPassword = dbutils.secrets.get(scope = databricksScope, key = "DB_PASSWORD")
+      val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
+      val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
 
       spark.read
         .format("jdbc")
@@ -289,7 +288,7 @@ class JDBCImport(
     val s3BucketConf = importConfig.s3Bucket
 
     val s3Bucket = if (s3BucketConf.isDefined) { s3BucketConf.get }
-    else { dbutils.secrets.get(scope = Constants.SCOPE, key = "S3_BUCKET") }
+    else { Credentials.getSecretValue("SQOOP_S3_BUCKET") }
 
     val dbtable = importConfig.outputTable.split("\\.")
 
@@ -332,3 +331,14 @@ object JDBCImport {
     new JDBCImport(scope, importConfig, jdbcParams)
   }
 }
+
+object Credentials {
+  def getSecretValue(secretName: String, table_name: String = Constants.CREDSTASH_TABLE_NAME ):
+  String = {
+    val key: String =
+      s"credstash -t $table_name -r ap-south-1 get $secretName".!!.trim
+    key
+  }
+}
+
+
