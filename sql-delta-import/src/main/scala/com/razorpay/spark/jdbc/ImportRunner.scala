@@ -30,6 +30,7 @@ object ImportRunner extends App {
   implicit val spark: SparkSession = SparkSession
     .builder()
     .appName("sqoop-on-spark")
+    .enableHiveSupport()
     .getOrCreate()
 
   val importConfig = ImportConfig(
