@@ -22,7 +22,7 @@ jobs:
         uses: docker/build-push-action@v1
         with:
           dockerfile: sql-delta-import/Dockerfile
-          registry: c.rzp.io
+          registry: harbor.razorpay.com
           repository: razorpay/sqoop-on-spark
           username: ${{ secrets.HARBOR_DOCKER_USERNAME }}
           password: ${{ secrets.HARBOR_DOCKER_PASSWORD }}
