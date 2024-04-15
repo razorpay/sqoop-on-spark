@@ -290,13 +290,13 @@ class JDBCImport(
     val s3Bucket = if (s3BucketConf.isDefined) { s3BucketConf.get }
     else { Credentials.getSecretValue("SQOOP_S3_BUCKET") }
 
-    val dbtable = importConfig.outputTable.split("\\.")
+    val dbTable = importConfig.outputTable.split("\\.")
 
-    val dbName = dbtable(0).trim
-    val tableName = dbtable(1).trim
+    val dbName = dbTable(0).trim
+    val tableName = dbTable(1).trim
 
     assert(
-      dbtable.size == 2 && dbtable.forall(_.trim.nonEmpty),
+      dbTable.size == 2 && dbTable.forall(_.trim.nonEmpty),
       "Please provide the output-table in the format {DB_NAME}.{TABLE_NAME}"
     )
 
