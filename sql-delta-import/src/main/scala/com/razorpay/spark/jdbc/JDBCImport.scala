@@ -295,6 +295,7 @@ class JDBCImport(
     val dbName = dbTable(0).trim
     val tableName = dbTable(1).trim
 
+    
     assert(
       dbTable.size == 2 && dbTable.forall(_.trim.nonEmpty),
       "Please provide the output-table in the format {DB_NAME}.{TABLE_NAME}"

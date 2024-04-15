@@ -24,8 +24,8 @@ jobs:
           dockerfile: sql-delta-import/Dockerfile
           registry: c.rzp.io
           repository: razorpay/sqoop-on-spark
-          username: ${{ secrets.PUBLIC_DOCKER_USERNAME }}
-          password: ${{ secrets.PUBLIC_DOCKER_PASSWORD }}
+          username: ${{ secrets.HARBOR_DOCKER_USERNAME }}
+          password: ${{ secrets.HARBOR_DOCKER_PASSWORD }}
           tags: sqoop-${{ github.sha }}
       - name: Update Build Status Succeeded
         if: success()
