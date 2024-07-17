@@ -160,9 +160,11 @@ class JDBCImport(
 
       val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
       val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
+      val driverType = DriverType.getJdbcDriver(Credentials.getSecretValue(s"${databricksScope}_DB_TYPE"))
 
       spark.read
         .format("jdbc")
+        .option("driver",driverType)
         .option("url", buildJdbcUrl)
         .option("dbtable", importConfig.jdbcQuery)
         .option("user", jdbcUsername)
@@ -341,4 +343,14 @@ object Credentials {
   }
 }
 
+object DriverType{
+  def getJdbcDriver(dbtype: String): String = {
+    dbtype.toLowerCase match {
+      case Constants.MYSQL => "com.mysql.cj.jdbc.Driver"
+      case Constants.POSTGRESQL => "org.postgresql.Driver"
+      case _ => throw new IllegalArgumentException(s"Unsupported dbtype: $dbtype")
+    }
+  }
+
+}
 
