@@ -163,10 +163,6 @@ class JDBCImport(
 
       logger.error(s"JDBC 1: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
 
-      if (dbType == Constants.POSTGRESQL && schema.isDefined) {
-        dbTable = schema.get + "." + dbTable
-      }
-      logger.error(s"JDBC 2: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
 
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
