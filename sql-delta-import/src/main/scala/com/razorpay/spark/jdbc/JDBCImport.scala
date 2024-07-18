@@ -63,7 +63,7 @@ case class ImportConfig(
   var inputTableEscaped: String = escapeCharacter + inputTable + escapeCharacter
 
   if (dbType == Constants.POSTGRESQL){
-    inputTableEscaped = schema+ "."+ inputTableEscaped
+    inputTableEscaped = schema.get + "."+ inputTableEscaped
   }
 
 
