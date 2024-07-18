@@ -57,10 +57,15 @@ case class ImportConfig(
   val escapeCharacter = if (dbType == Constants.MYSQL) {
     "`"
   } else if (dbType == Constants.POSTGRESQL) {
-    """""""
+    ""
   }
 
-  val inputTableEscaped: String = escapeCharacter + inputTable + escapeCharacter
+  var inputTableEscaped: String = escapeCharacter + inputTable + escapeCharacter
+
+  if (dbType == Constants.POSTGRESQL){
+    inputTableEscaped = schema+ "."+ inputTableEscaped
+  }
+
 
   val boundsSql: String = boundaryQuery.getOrElse(
     s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTableEscaped) as bounds"
