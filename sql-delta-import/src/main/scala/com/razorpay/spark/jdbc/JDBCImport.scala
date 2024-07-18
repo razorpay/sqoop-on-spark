@@ -20,8 +20,11 @@ import com.razorpay.spark.jdbc.common.Constants
 import org.apache.spark.sql.functions.{col, from_unixtime, lit, substring}
 import org.apache.spark.sql.types.{IntegerType, LongType}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.slf4j.{Logger, LoggerFactory}
+
 import scala.sys.process._
 import java.util.Properties
+
 
 /**
  * Class that contains JDBC source, read parallelism params and target table name
@@ -81,6 +84,8 @@ class JDBCImport(
 )(implicit val spark: SparkSession) {
 
   import spark.implicits._
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
 
   def createDbIfNotExists(outputDbName: String): Unit = {
     val s3Bucket = Credentials.getSecretValue("SQOOP_S3_BUCKET")
@@ -146,6 +151,18 @@ class JDBCImport(
 
     if (importConfig.splitBy.nonEmpty) {
       val defaultString = "0"
+      val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
+      val schema = importConfig.schema
+
+      var dbTable = importConfig.jdbcQuery
+
+      logger.error(s"JDBC 1: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
+
+      if (dbType == Constants.POSTGRESQL && schema.isDefined) {
+        dbTable = schema.get + "." + dbTable
+      }
+      logger.error(s"JDBC 2: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
+
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
         .selectExpr("cast(min as string) min", "cast(max as string) max")
@@ -156,16 +173,7 @@ class JDBCImport(
 
       val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
       val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
-      val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
-      val schema = importConfig.schema
       val driverType = DriverType.getJdbcDriver(dbType)
-      var dbTable = importConfig.jdbcQuery
-
-      if (dbType == Constants.POSTGRESQL && schema.isDefined) {
-        dbTable = schema.get + "." + dbTable
-      }
-
-      println(s"print jdbcUrl $buildJdbcUrl and dbTable $dbTable")
 
       spark.read
         .format("jdbc")
