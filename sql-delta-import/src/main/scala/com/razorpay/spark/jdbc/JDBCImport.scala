@@ -132,10 +132,6 @@ class JDBCImport(
 
     var connectionUrl = s"jdbc:$dbType://$host:$port/$database"
 
-    if (dbType == Constants.POSTGRESQL && schema.isDefined) {
-      connectionUrl = s"jdbc:$dbType://$host:$port/$database?currentSchema=${schema.get}"
-    }
-
     connectionUrl
   }
 
@@ -160,13 +156,18 @@ class JDBCImport(
 
       val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
       val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
-      val driverType = DriverType.getJdbcDriver(Credentials.getSecretValue(s"${databricksScope}_DB_TYPE"))
+      val driverType = DriverType.getJdbcDriver(dbType)
+      val dbTable = importConfig.jdbcQuery
+
+      if (dbType == Constants.POSTGRESQL && schema.isDefined) {
+        dbTable = schema.get + "." + dbTable
+      }
 
       spark.read
         .format("jdbc")
         .option("driver",driverType)
         .option("url", buildJdbcUrl)
-        .option("dbtable", importConfig.jdbcQuery)
+        .option("dbtable", dbTable)
         .option("user", jdbcUsername)
         .option("password", jdbcPassword)
         .option("partitionColumn", importConfig.splitColumn)
