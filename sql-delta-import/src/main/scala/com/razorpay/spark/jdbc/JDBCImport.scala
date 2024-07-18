@@ -130,7 +130,7 @@ class JDBCImport(
     val database = importConfig.database
     val schema = importConfig.schema
 
-    var connectionUrl = s"jdbc:$dbType://$host:$port/$database"
+    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
 
     connectionUrl
   }
@@ -164,6 +164,8 @@ class JDBCImport(
       if (dbType == Constants.POSTGRESQL && schema.isDefined) {
         dbTable = schema.get + "." + dbTable
       }
+
+      println(s"print jdbcUrl $buildJdbcUrl and dbTable $dbTable")
 
       spark.read
         .format("jdbc")
