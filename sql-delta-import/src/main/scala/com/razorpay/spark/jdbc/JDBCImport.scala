@@ -141,8 +141,11 @@ class JDBCImport(
     val schema = importConfig.schema
 
     val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
-
-    connectionUrl
+    if (dbType == Constants.POSTGRESQL) {
+      s"$connectionUrl?sslmode=disable"
+    } else {
+      connectionUrl
+    }
   }
 
   private lazy val sourceDataframe = readJDBCSourceInParallel()
