@@ -29,28 +29,21 @@ object ImportRunner extends App {
 
   implicit val spark: SparkSession = SparkSession
     .builder()
-    .appName("sqoop-on-spark")
+    .appName("spark-snapshot-backfill")
     .enableHiveSupport()
     .getOrCreate()
 
   val importConfig = ImportConfig(
-    config.scope(),
-    config.inputTable(),
-    config.query.toOption,
-    config.boundaryQuery.toOption,
+    config.s3ReadPath(),
     config.outputTable(),
-    config.splitBy.toOption,
-    config.chunks(),
     config.partitionBy.toOption,
-    config.database(),
     config.mapColumns.toOption,
-    config.s3Bucket.toOption,
+    config.s3WriteBucket.toOption,
     config.maxExecTimeout(),
     config.schema.toOption
   )
 
-  JDBCImport(
-    scope = config.scope(),
+  S3Import(
     importConfig = importConfig
   ).run()
 }
@@ -58,19 +51,13 @@ object ImportRunner extends App {
 class ImportRunnerConfig(arguments: Seq[String]) extends ScallopConf(arguments) {
 
   override def mainOptions: Seq[String] =
-    Seq("scope", "inputTable", "outputTable", "splitBy", "database")
+    Seq("s3ReadPath", "outputTable")
 
-  val scope: ScallopOption[String] = opt[String](required = true)
-  val database: ScallopOption[String] = opt[String](required = true)
-  val inputTable: ScallopOption[String] = opt[String](required = true)
-  val query: ScallopOption[String] = opt[String](required = false)
-  val boundaryQuery: ScallopOption[String] = opt[String](required = false)
+  val s3ReadPath: ScallopOption[String] = opt[String](required = true)
   val outputTable: ScallopOption[String] = opt[String](required = true)
-  val splitBy: ScallopOption[String] = opt[String](required = false)
-  val chunks: ScallopOption[Int] = opt[Int](default = Some(1))
   val partitionBy: ScallopOption[String] = opt[String](required = false)
   val mapColumns: ScallopOption[String] = opt[String](required = false)
-  val s3Bucket: ScallopOption[String] = opt[String](required = false)
+  val s3WriteBucket: ScallopOption[String] = opt[String](required = false)
 
   val maxExecTimeout: ScallopOption[Long] =
     opt[Long](default = Some(Constants.QUERY_TIMEOUT * 1000L))

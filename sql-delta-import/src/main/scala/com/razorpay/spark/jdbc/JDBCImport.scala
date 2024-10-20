@@ -23,8 +23,6 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.sys.process._
-import java.util.Properties
-
 
 /**
  * Class that contains JDBC source, read parallelism params and target table name
@@ -35,62 +33,25 @@ import java.util.Properties
  * @param chunks      - to how many chunks split jdbc source data
  */
 case class ImportConfig(
-    scope: String,
-    inputTable: String,
-    query: Option[String],
-    boundaryQuery: Option[String],
+    s3ReadPath: String,
     outputTable: String,
-    splitBy: Option[String],
-    chunks: Int,
     partitionBy: Option[String],
-    database: String,
     mapColumns: Option[String],
-    s3Bucket: Option[String],
+    s3WriteBucket: Option[String],
     maxExecTimeout: Long,
     schema: Option[String]
-) {
-
-  val splitColumn: String = splitBy.getOrElse(null.asInstanceOf[String])
-
-  val dbType: String = Credentials.getSecretValue(s"${scope}_DB_TYPE")
-
-  val escapeCharacter = if (dbType == Constants.MYSQL) {
-    "`"
-  } else if (dbType == Constants.POSTGRESQL) {
-    ""
-  }
-
-  var inputTableEscaped: String = escapeCharacter + inputTable + escapeCharacter
-
-  if (dbType == Constants.POSTGRESQL && schema.isDefined){
-    inputTableEscaped = schema.get + "."+ inputTableEscaped
-  }
-
-
-  val boundsSql: String = boundaryQuery.getOrElse(
-    s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTableEscaped) as bounds"
-  )
-
-  val jdbcQuery: String = query.getOrElse(inputTableEscaped)
-}
+)
 
 /**
- * Class that does reading from JDBC source, transform and writing to Delta table
+ * Class that does reading from an S3 source, transform and writing to Delta table
  *
- * @param databricksScope  databricks secret scope  for jdbc source
+ * @param databricksScope  databricks secret scope for s3 source
  * @param importConfig  case class that contains source read parallelism params and target table
- * @param jdbcParams  additional JDBC session params like isolation level, perf tuning,
- *                    net wait params etc.
  */
-class JDBCImport(
-    databricksScope: String,
-    importConfig: ImportConfig,
-    jdbcParams: Map[String, String] = Map()
+class S3Import(
+    importConfig: ImportConfig
 )(implicit val spark: SparkSession) {
-
-  import spark.implicits._
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
 
   def createDbIfNotExists(outputDbName: String): Unit = {
     val s3Bucket = Credentials.getSecretValue("SQOOP_S3_BUCKET")
@@ -103,101 +64,20 @@ class JDBCImport(
     }
   }
 
-  implicit def mapToProperties(m: Map[String, String]): Properties = {
-    val properties = new Properties()
+  private lazy val sourceDataframe = readS3Source()
 
-    val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
-    val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
-    val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
-
-    if (dbType == Constants.MYSQL) {
-      properties.setProperty("driver", Constants.MYSQL_DRIVER)
-    } else if (dbType == Constants.POSTGRESQL) {
-      properties.setProperty("driver", Constants.POSTGRESQL_DRIVER)
-    }
-
-    properties.setProperty("queryTimeout", Constants.QUERY_TIMEOUT.toString)
-    properties.put("user", jdbcUsername)
-    properties.put("password", jdbcPassword)
-
-    if (dbType == "mysql") {
-      properties.put("tinyInt1isBit", "false")
-      properties.put("useSSL", "false")
-      // https://www.taogenjia.com/2021/05/26/JDBC-Error-Java-sql-SQLException-Zero-Date-value-Prohibited/
-      properties.put("zeroDateTimeBehavior", "convertToNull")
-      properties.put("sessionVariables", s"MAX_EXECUTION_TIME=${importConfig.maxExecTimeout}")
-    }
-
-    m.foreach(pair => properties.put(pair._1, pair._2))
-    properties
-  }
-
-  def buildJdbcUrl: String = {
-    val host = Credentials.getSecretValue(s"${databricksScope}_DB_HOST")
-    val port = Credentials.getSecretValue(s"${databricksScope}_DB_PORT")
-    val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
-
-    val database = importConfig.database
-    val schema = importConfig.schema
-
-    val connectionUrl = s"jdbc:$dbType://$host:$port/$database"
-    if (dbType == Constants.POSTGRESQL) {
-      s"$connectionUrl?sslmode=disable"
+  private def readS3Source(): DataFrame = {
+    val s3Path = if (importConfig.s3ReadPath.endsWith("/")) {
+      importConfig.s3ReadPath + "*/"
     } else {
-      connectionUrl
+      importConfig.s3ReadPath + "/*/"
     }
-  }
 
-  private lazy val sourceDataframe = readJDBCSourceInParallel()
+    val dataFrame = spark.read
+      .format("parquet")
+      .load(s3Path)
 
-  /**
-   * obtains lower and upper bound of source table and uses those values to read in a JDBC dataframe
-   *
-   * @return a dataframe read from source table
-   */
-  private def readJDBCSourceInParallel(): DataFrame = {
-
-    if (importConfig.splitBy.nonEmpty) {
-      val defaultString = "0"
-      val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
-      val schema = importConfig.schema
-
-      var dbTable = importConfig.jdbcQuery
-
-      logger.error(s"JDBC 1: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
-
-
-      val (lower, upper) = spark.read
-        .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
-        .selectExpr("cast(min as string) min", "cast(max as string) max")
-        .as[(Option[String], Option[String])]
-        .take(1)
-        .map { case (a, b) => (a.getOrElse(defaultString), b.getOrElse(defaultString)) }
-        .head
-
-      val jdbcUsername = Credentials.getSecretValue(s"${databricksScope}_DB_USERNAME")
-      val jdbcPassword = Credentials.getSecretValue(s"${databricksScope}_DB_PASSWORD")
-      val driverType = DriverType.getJdbcDriver(dbType)
-
-      spark.read
-        .format("jdbc")
-        .option("driver",driverType)
-        .option("url", buildJdbcUrl)
-        .option("dbtable", dbTable)
-        .option("user", jdbcUsername)
-        .option("password", jdbcPassword)
-        .option("partitionColumn", importConfig.splitColumn)
-        .option("lowerBound", lower)
-        .option("upperBound", upper)
-        .option("numPartitions", importConfig.chunks)
-        .load()
-        .where(
-          s"${importConfig.splitColumn} >= '$lower' and ${importConfig.splitColumn} <= '$upper'"
-        )
-
-    } else {
-      spark.read.jdbc(buildJdbcUrl, importConfig.jdbcQuery, jdbcParams)
-    }
+    dataFrame
   }
 
   def resolveColumnDataType(dataType: String): String = {
@@ -297,14 +177,15 @@ class JDBCImport(
   }
 
   /**
-   * Runs transform against dataframe read from jdbc and writes it to s3
+   * Runs transform against dataframe read from S3 and writes it to Delta
    */
   def run(): Unit = {
+
     val df = if (importConfig.mapColumns.nonEmpty) {
       DataTransforms.castColumns(sourceDataframe, importConfig.mapColumns.get)
     } else { sourceDataframe }
 
-    val s3BucketConf = importConfig.s3Bucket
+    val s3BucketConf = importConfig.s3WriteBucket
 
     val s3Bucket = if (s3BucketConf.isDefined) { s3BucketConf.get }
     else { Credentials.getSecretValue("SQOOP_S3_BUCKET") }
@@ -339,35 +220,24 @@ class JDBCImport(
   }
 }
 
-object JDBCImport {
+object S3Import {
 
   def apply(
-      scope: String,
-      importConfig: ImportConfig,
-      jdbcParams: Map[String, String] = Map()
-  )(implicit spark: SparkSession): JDBCImport = {
+      importConfig: ImportConfig
+  )(implicit spark: SparkSession): S3Import = {
 
-    new JDBCImport(scope, importConfig, jdbcParams)
+    new S3Import(importConfig)
   }
 }
 
 object Credentials {
-  def getSecretValue(secretName: String, table_name: String = Constants.CREDSTASH_TABLE_NAME ):
-  String = {
+
+  def getSecretValue(
+      secretName: String,
+      table_name: String = Constants.CREDSTASH_TABLE_NAME
+  ): String = {
     val key: String =
       s"credstash -t $table_name -r ap-south-1 get $secretName".!!.trim
     key
   }
 }
-
-object DriverType{
-  def getJdbcDriver(dbtype: String): String = {
-    dbtype.toLowerCase match {
-      case Constants.MYSQL => "com.mysql.cj.jdbc.Driver"
-      case Constants.POSTGRESQL => "org.postgresql.Driver"
-      case _ => throw new IllegalArgumentException(s"Unsupported dbtype: $dbtype")
-    }
-  }
-
-}
-
