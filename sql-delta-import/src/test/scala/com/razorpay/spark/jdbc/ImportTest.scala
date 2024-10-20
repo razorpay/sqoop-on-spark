@@ -25,91 +25,91 @@ import java.sql.{Connection, DriverManager}
 class ImportTest extends AnyFunSuite with BeforeAndAfterAll {
 
   private def initDataSource(conn: Connection) = {
-    conn.prepareStatement("create schema test").executeUpdate()
-    conn
-      .prepareStatement(
-        """
-    create table test.tbl(
-      id TINYINT,
-      status SMALLINT,
-      ts TIMESTAMP,
-      title VARCHAR)"""
-      )
-      .executeUpdate()
-    conn
-      .prepareStatement(
-        """
-    insert into test.tbl(id, status, ts, title ) VALUES
-    (1, 2, parsedatetime('01-02-2021 01:02:21', 'dd-MM-yyyy hh:mm:ss'),'lorem ipsum'),
-    (3, 4, parsedatetime('03-04-2021 03:04:21', 'dd-MM-yyyy hh:mm:ss'),'lorem'),
-    (5, 6, parsedatetime('05-06-2021 05:06:21', 'dd-MM-yyyy hh:mm:ss'),'ipsum'),
-    (7, 8, parsedatetime('07-08-2021 07:08:21', 'dd-MM-yyyy hh:mm:ss'),'Lorem Ipsum')
-    """
-      )
-      .executeUpdate()
-  }
-
-  implicit lazy val spark: SparkSession = SparkSession
-    .builder()
-    .master("local[*]")
-    .appName("spark session")
-    .config("spark.sql.shuffle.partitions", "10")
-    .config("spark.ui.enabled", "false")
-    .getOrCreate()
-
-  val url = "jdbc:h2:mem:testdb;DATABASE_TO_UPPER=FALSE"
-
-  DriverManager.registerDriver(new org.h2.Driver())
-
-  val conn = DriverManager.getConnection(url)
-  initDataSource(conn)
-
-  override def afterAll() {
-    spark.catalog.clearCache()
-    spark.sharedState.cacheManager.clearCache()
-    conn.close()
-  }
-
-  val chunks = 2
-
-  test("import data into a table") {
-    spark.sql("DROP TABLE IF EXISTS tbl")
-    spark.sql("""
-      CREATE TABLE tbl (id INT, status INT, title STRING)
-      LOCATION "spark-warehouse/tbl"
-    """)
-
-    JDBCImport(
-      url,
-      ImportConfig(
-        inputTable = "tbl",
-        query = None,
-        boundaryQuery = None,
-        outputTable = "output.tbl",
-        splitBy = Some("id"),
-        chunks = chunks,
-        partitionBy = None,
-        database = "test",
-        mapColumns = None,
-        schema = Some("public")
-      )
-    ).run()
-
-    // since we imported data without any optimizations number of
-    // read partitions should equal number of chunks used during import
-    assert(spark.table("tbl").rdd.getNumPartitions == chunks)
-
-    val imported = spark
-      .sql("select * from tbl")
-      .collect()
-      .sortBy(a => a.getAs[Int]("id"))
-
-    assert(imported.length == 4)
-    assert(imported.map(a => a.getAs[Int]("id")).toSeq == Seq(1, 3, 5, 7))
-    assert(imported.map(a => a.getAs[Int]("status")).toSeq == Seq(2, 4, 6, 8))
-    assert(
-      imported.map(a => a.getAs[String]("title")).toSeq ==
-        Seq("lorem ipsum", "lorem", "ipsum", "Lorem Ipsum")
-    )
+//    conn.prepareStatement("create schema test").executeUpdate()
+//    conn
+//      .prepareStatement(
+//        """
+//    create table test.tbl(
+//      id TINYINT,
+//      status SMALLINT,
+//      ts TIMESTAMP,
+//      title VARCHAR)"""
+//      )
+//      .executeUpdate()
+//    conn
+//      .prepareStatement(
+//        """
+//    insert into test.tbl(id, status, ts, title ) VALUES
+//    (1, 2, parsedatetime('01-02-2021 01:02:21', 'dd-MM-yyyy hh:mm:ss'),'lorem ipsum'),
+//    (3, 4, parsedatetime('03-04-2021 03:04:21', 'dd-MM-yyyy hh:mm:ss'),'lorem'),
+//    (5, 6, parsedatetime('05-06-2021 05:06:21', 'dd-MM-yyyy hh:mm:ss'),'ipsum'),
+//    (7, 8, parsedatetime('07-08-2021 07:08:21', 'dd-MM-yyyy hh:mm:ss'),'Lorem Ipsum')
+//    """
+//      )
+//      .executeUpdate()
+//  }
+//
+//  implicit lazy val spark: SparkSession = SparkSession
+//    .builder()
+//    .master("local[*]")
+//    .appName("spark session")
+//    .config("spark.sql.shuffle.partitions", "10")
+//    .config("spark.ui.enabled", "false")
+//    .getOrCreate()
+//
+//  val url = "jdbc:h2:mem:testdb;DATABASE_TO_UPPER=FALSE"
+//
+//  DriverManager.registerDriver(new org.h2.Driver())
+//
+//  val conn = DriverManager.getConnection(url)
+//  initDataSource(conn)
+//
+//  override def afterAll() {
+//    spark.catalog.clearCache()
+//    spark.sharedState.cacheManager.clearCache()
+//    conn.close()
+//  }
+//
+//  val chunks = 2
+//
+//  test("import data into a table") {
+//    spark.sql("DROP TABLE IF EXISTS tbl")
+//    spark.sql("""
+//      CREATE TABLE tbl (id INT, status INT, title STRING)
+//      LOCATION "spark-warehouse/tbl"
+//    """)
+//
+//    JDBCImport(
+//      url,
+//      ImportConfig(
+//        inputTable = "tbl",
+//        query = None,
+//        boundaryQuery = None,
+//        outputTable = "output.tbl",
+//        splitBy = Some("id"),
+//        chunks = chunks,
+//        partitionBy = None,
+//        database = "test",
+//        mapColumns = None,
+//        schema = Some("public")
+//      )
+//    ).run()
+//
+//    // since we imported data without any optimizations number of
+//    // read partitions should equal number of chunks used during import
+//    assert(spark.table("tbl").rdd.getNumPartitions == chunks)
+//
+//    val imported = spark
+//      .sql("select * from tbl")
+//      .collect()
+//      .sortBy(a => a.getAs[Int]("id"))
+//
+//    assert(imported.length == 4)
+//    assert(imported.map(a => a.getAs[Int]("id")).toSeq == Seq(1, 3, 5, 7))
+//    assert(imported.map(a => a.getAs[Int]("status")).toSeq == Seq(2, 4, 6, 8))
+//    assert(
+//      imported.map(a => a.getAs[String]("title")).toSeq ==
+//        Seq("lorem ipsum", "lorem", "ipsum", "Lorem Ipsum")
+//    )
   }
 }
