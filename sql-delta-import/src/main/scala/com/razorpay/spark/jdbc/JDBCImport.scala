@@ -93,7 +93,7 @@ class JDBCImport(
 
 
   def createDbIfNotExists(outputDbName: String): Unit = {
-    val s3Bucket = Credentials.getSecretValue("SQOOP_S3_BUCKET")
+    val s3Bucket = "rzp-de-sg-cell-101-payment"
     val baseS3Path = s"s3a://$s3Bucket/sqoop"
 
     if (!spark.catalog.databaseExists(outputDbName)) {
@@ -307,7 +307,7 @@ class JDBCImport(
     val s3BucketConf = importConfig.s3Bucket
 
     val s3Bucket = if (s3BucketConf.isDefined) { s3BucketConf.get }
-    else { Credentials.getSecretValue("SQOOP_S3_BUCKET") }
+    else { "rzp-de-sg-cell-101-payment" }
 
     val dbtable = importConfig.outputTable.split("\\.")
 
