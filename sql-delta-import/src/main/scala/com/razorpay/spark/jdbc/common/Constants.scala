@@ -12,7 +12,7 @@ object Constants {
   // seconds
   final val QUERY_TIMEOUT = 10800
 
-  final val CREDSTASH_TABLE_NAME = "credstash-prod-emr-sqoop"
+  final val CREDSTASH_TABLE_NAME = "kubestash-de"
 
   final val CREATED_DATE = "created_date"
   final val CREATED_AT = "created_at"
