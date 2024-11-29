@@ -355,7 +355,7 @@ object Credentials {
   def getSecretValue(secretName: String, table_name: String = Constants.CREDSTASH_TABLE_NAME ):
   String = {
     val key: String =
-      s"credstash -t $table_name -r ap-south-1 get $secretName".!!.trim
+      s"credstash -t $table_name -r ap-southeast-1 get $secretName".!!.trim
     key
   }
 }
