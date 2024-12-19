@@ -66,7 +66,6 @@ case class ImportConfig(
     inputTableEscaped = schema.get + "."+ inputTableEscaped
   }
 
-
   val boundsSql: String = boundaryQuery.getOrElse(
     s"(select min($splitColumn) as min, max($splitColumn) as max from $inputTableEscaped) as bounds"
   )
@@ -90,7 +89,6 @@ class JDBCImport(
 
   import spark.implicits._
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
 
   def createDbIfNotExists(outputDbName: String): Unit = {
     val s3Bucket = Credentials.getSecretValue("SQOOP_S3_BUCKET")
@@ -160,12 +158,10 @@ class JDBCImport(
     if (importConfig.splitBy.nonEmpty) {
       val defaultString = "0"
       val dbType = Credentials.getSecretValue(s"${databricksScope}_DB_TYPE")
-      val schema = importConfig.schema
 
-      var dbTable = importConfig.jdbcQuery
+      val dbTable = importConfig.jdbcQuery
 
       logger.error(s"JDBC 1: jdbcUrl $buildJdbcUrl and dbTable $dbTable")
-
 
       val (lower, upper) = spark.read
         .jdbc(buildJdbcUrl, importConfig.boundsSql, jdbcParams)
