@@ -7,9 +7,6 @@ on:
     paths:
       - 'sql-delta-import/**'
 
-permissions:
-  contents: read
-
 jobs:
   build:
     name: Build Sqoop on Spark
@@ -21,8 +18,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout Codebase
         uses: actions/checkout@v2
-      # Start PMG in server mode to block malicious packages at install time
-      - name: Start SafeDep PMG
+      - name: Setup PMG proxy
+        id: pmg-setup
         uses: safedep/pmg@v1
         with:
           server-mode: true
@@ -54,7 +51,11 @@ jobs:
           SLACK_CHANNEL: tech_analytics_alerts
           SLACK_ICON: https://avatars3.githubusercontent.com/u/9919?s=40&v=4
         uses: rtCamp/action-slack-notify@v2.0.2
-      # Enforce PMG policy and flush events; fails the job on a malicious-package block
       - name: Enforce PMG policy
         if: always()
-        run: pmg proxy stop --fail-on-violation
+        run: |
+          if [ "${{ steps.pmg-setup.outcome }}" = "success" ]; then
+            pmg proxy stop --fail-on-violation
+          else
+            pmg proxy stop || true
+          fi
