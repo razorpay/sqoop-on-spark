@@ -18,6 +18,13 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout Codebase
         uses: actions/checkout@v2
+      - name: Setup PMG proxy
+        id: pmg-setup
+        uses: safedep/pmg@v1
+        with:
+          server-mode: true
+          api-key: ${{ secrets.PMG_PUBLIC_REPOS_TOKEN }}
+          tenant-id: ${{ secrets.PMG_TENANT_ID }}
       - name: Build and Push Docker Image to Dockerhub
         uses: docker/build-push-action@v1
         with:
@@ -44,3 +51,11 @@ jobs:
           SLACK_CHANNEL: tech_analytics_alerts
           SLACK_ICON: https://avatars3.githubusercontent.com/u/9919?s=40&v=4
         uses: rtCamp/action-slack-notify@v2.0.2
+      - name: Enforce PMG policy
+        if: always()
+        run: |
+          if [ "${{ steps.pmg-setup.outcome }}" = "success" ]; then
+            pmg proxy stop --fail-on-violation
+          else
+            pmg proxy stop || true
+          fi
